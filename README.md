@@ -8,7 +8,7 @@
 только на требования, автотесты и проверку результата. Продуктовые решения, тексты, приёмка и правила работы
 с AI — мои.
 
-**Наглядный разбор проекта** — [docs/showcase.html](docs/showcase.html) (скачать и открыть в браузере).
+**Сайт:** [kireevonline.ru](https://kireevonline.ru) · **Обзор проекта:** [kireevsaratov-stack.github.io/kireevonline-Public/overview.html](https://kireevsaratov-stack.github.io/kireevonline-Public/overview.html)
 
 ## Технологии
 
