@@ -1,46 +1,34 @@
-// Проверка «Барабана» в настоящем Chrome без окна (временный профиль), в реальном времени.
+// «Барабан» в настоящем Chrome без окна, в реальном времени: барабаны трогаются и по очереди встают
+// точно на кадр, кнопка снова свободна, сетка собрана и не прыгает, в окошках — первые 3 кадра сетки,
+// анимация без долгих зависаний кадра. Сам сообщает «прошло / не прошло».
 // Запуск: node spin_check.mjs [ширина] [высота] [прогонов]
-import { tmpdir } from 'node:os';
-import { spawn } from 'node:child_process';
-import { setTimeout as sleep } from 'node:timers/promises';
+import { main, openChrome, sleep } from './lib.mjs';
 
-const SP = decodeURIComponent(new URL('.', import.meta.url).pathname);
-const [W = 1280, Hh = 900, RUNS = 3] = process.argv.slice(2).map(Number);
-const PORT = 9333;
-const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', [
-  '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${tmpdir()}/kireevonline-chrome-2`,
-  '--no-first-run', `--window-size=${W},${Hh}`,
-  '--host-resolver-rules=MAP fonts.googleapis.com ~NOTFOUND, MAP fonts.gstatic.com ~NOTFOUND',
-  'about:blank',
-], { stdio: 'ignore' });
+const [W = 1280, H = 900, RUNS = 3] = process.argv.slice(2).map(Number);
+// мс: самый долгий промежуток между кадрами страницы. Обычно 16–50 мс; около 0,5 с после нажатия, когда
+// пересобирается сетка, бывает ~230 мс — барабаны крутит сам браузер отдельно от страницы, глазом это не видно.
+// Больше 400 мс — значит, страница зависла заметно (что-то новое тяжёлое во время вращения).
+const MAX_GAP = 400;
 
-try {
-  let pages;
-  for (let i = 0; i < 50; i++) {
-    try { pages = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); if (pages.length) break; } catch {}
-    await sleep(200);
-  }
-  const page = pages.find(p => p.type === 'page');
-  const ws = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise(r => ws.addEventListener('open', r, { once: true }));
-  let id = 0; const wait = new Map();
-  ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.id && wait.has(m.id)) { wait.get(m.id)(m); wait.delete(m.id); } });
-  const send = (method, params = {}) => new Promise(r => { const i = ++id; wait.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
-
-  await send('Page.enable');
-  await send('Page.navigate', { url: 'http://localhost:8100/shuffle/' });
-  await sleep(5000);
-  const results = [];
+await main(`«Барабан» ${W}×${H}`, async t => {
+  const page = await openChrome({ width: W, height: H });
+  await page.navigate('/shuffle/', 4000);
   for (let run = 1; run <= RUNS; run++) {
-    const r = await send('Runtime.evaluate', { awaitPromise: true, returnByValue: true, expression: `(${measure.toString()})()` });
-    results.push(r.result.result ? r.result.result.value : r.result);
+    const r = await page.js(`(${measure.toString()})()`);
+    const p = `вращение ${run}:`;
+    t.info(p, JSON.stringify({ тронулись: r.started, встали: r.stopped, 'от цели, px': r.offTarget, 'самый долгий кадр': r.gap + ' мс на ' + r.gapAt + ' мс', события: r.events.map(e => e.join(' ')) }));
+    t.ok(r.started.every(s => s !== null && s < 500), `${p} все барабаны тронулись в первые 0,5 с`, r.started);
+    t.ok(r.stopped.every(s => s > 1000 && s < 6500), `${p} все барабаны встали (через 1–6,5 с)`, r.stopped);
+    t.ok(r.stopped[0] < r.stopped[1] && r.stopped[1] < r.stopped[2], `${p} встают по очереди слева направо`);
+    t.ok(r.offTarget.every(d => Math.abs(d) <= 1), `${p} каждый встал на кадр точно (±1 px)`, r.offTarget);
+    t.ok(r.free, `${p} кнопка снова свободна`);
+    t.ok(r.assembled && r.revealed, `${p} сетка собрана заново и проявилась`);
+    t.ok(r.noJump, `${p} сетка не прыгнула после появления`);
+    t.ok(r.reelsMatchGrid, `${p} в окошках первые 3 кадра сетки`);
+    t.ok(r.gap < MAX_GAP, `${p} анимация не спотыкается (самый долгий кадр < ${MAX_GAP} мс)`, r.gap + ' мс');
     await sleep(1500);
   }
-  console.log(JSON.stringify(results, null, 1));
-  ws.close();
-} finally {
-  chrome.kill();
-}
+}, { timeout: 60 + RUNS * 15 });
 
 // выполняется внутри страницы
 function measure() {
@@ -69,25 +57,25 @@ function measure() {
     document.querySelector('.js-spin').click();
     (function loop() {
       const t = T();
-      S.push([t, strips.map(s => -new DOMMatrix(getComputedStyle(s).transform).m42), parseFloat(getComputedStyle(masonry).opacity)]);
+      S.push([t, strips.map(s => -new DOMMatrix(getComputedStyle(s).transform).m42)]);
       if (t < 7200) requestAnimationFrame(loop); else done();
     })();
     function done() {
       mo1.disconnect(); mo2.disconnect();
-      const res = { H, события: ev, кадров: S.length };
       let gap = 0, gapAt = 0;
       for (let i = 1; i < S.length; i++) { const g = S[i][0] - S[i - 1][0]; if (g > gap) { gap = g; gapAt = S[i - 1][0]; } }
-      res['самый долгий кадр'] = Math.round(gap) + ' мс на ' + gapAt + ' мс';
-      res['барабан тронулся, мс'] = strips.map((s, k) => { const i = S.findIndex(x => x[1][k] > 0.01); return i < 0 ? null : S[i][0]; });
-      res['барабан встал, мс'] = strips.map((s, k) => { let t = 0; for (let i = 1; i < S.length; i++) if (Math.abs(S[i][1][k] - S[i - 1][1][k]) > 0.01) t = S[i][0]; return t; });
-      res['макс. скорость, px/кадр'] = strips.map((s, k) => { let m = 0; for (let i = 1; i < S.length; i++) { const dt = S[i][0] - S[i - 1][0]; if (dt > 0) m = Math.max(m, (S[i][1][k] - S[i - 1][1][k]) / dt * 1000 / 60); } return +m.toFixed(1); });
-      res['итог от цели, px'] = S[S.length - 1][1].map(v => +(v - 26 * H).toFixed(2));
-      res['сетка видна во время вращения (макс. прозрачность 0,7–2,5 с)'] = Math.max(...S.filter(x => x[0] > 700 && x[0] < 2500).map(x => x[2]));
       const grid = [...masonry.querySelectorAll('.photo-item img')].slice(0, 3).map(i => i.getAttribute('src'));
-      res['в окошках первые 3 кадра сетки'] = JSON.stringify(grid) === JSON.stringify(reels.map(r => r.dataset.src));
-      res['кнопка снова свободна'] = !document.querySelector('.js-spin').dataset.busy;
-      res['сетка не прыгнула после появления'] = rectsAtReveal === rects();
-      resolve(res);
+      resolve({
+        events: ev,
+        gap: Math.round(gap), gapAt,
+        started: strips.map((s, k) => { const i = S.findIndex(x => x[1][k] > 0.01); return i < 0 ? null : S[i][0]; }),
+        stopped: strips.map((s, k) => { let t = 0; for (let i = 1; i < S.length; i++) if (Math.abs(S[i][1][k] - S[i - 1][1][k]) > 0.01) t = S[i][0]; return t; }),
+        offTarget: S[S.length - 1][1].map(v => +(v - 26 * H).toFixed(2)),  // цель — 27-й кадр ленты (см. spinReels)
+        reelsMatchGrid: JSON.stringify(grid) === JSON.stringify(reels.map(r => r.dataset.src)),
+        free: !document.querySelector('.js-spin').dataset.busy,
+        assembled: has('сетка собрана'), revealed: has('сетка проявилась'),
+        noJump: rectsAtReveal !== null && rectsAtReveal === rects(),
+      });
     }
   });
 }

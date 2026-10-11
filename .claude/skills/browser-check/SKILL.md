@@ -15,32 +15,16 @@ description: Проверить kireevonline.ru в настоящем брауз
 `DJANGO_DEBUG=True DJANGO_MEDIA_ROOT=../backups/media ../.venv/bin/python manage.py runserver 127.0.0.1:8100`.
 Свёрнутая панель браузера останавливает анимации — «Барабан» проверять только скриптами ниже.
 
-## 2. Публичные страницы
-Из `browser_checks/`:
-- `node spin_check.mjs 1280 900 2` и `node reel_unique_check.mjs` — «Барабан»;
-- `node album_check.mjs` и `node album_check.mjs http://localhost:8100/album/9/ phone` — альбом;
-- `node lever_check.mjs` — рычаг;
-- `node keyboard_check.mjs` — клавиатура (сам говорит «прошло / не прошло»).
+## 2–3. Все проверки одной командой
+Из `browser_checks/`: `node run_all.mjs` — «Барабан», ленты, рычаг, альбом (компьютер и телефон), шапка,
+клавиатура, панель управления (1280 и 412) и загрузка. Каждая сама говорит «прошло / не прошло», в конце —
+«8 из 8 прошли»; что-то не прошло — код выхода 1. Без панели: `node run_all.mjs --no-admin`.
 
-## 3. Панель управления — временным админом ТОЛЬКО в локальной базе
-```bash
-T=$(python3 -c 'import tempfile;print(tempfile.gettempdir())')
-python3 -c "import secrets;print(secrets.token_urlsafe(18))" > "$T/kireevonline-ui-check-pw.txt"
-../.venv/bin/python manage.py shell -c "
-import tempfile, os
-from django.contrib.auth import get_user_model
-pw = open(os.path.join(tempfile.gettempdir(), 'kireevonline-ui-check-pw.txt')).read().strip()
-u, _ = get_user_model().objects.get_or_create(username='ui-check')
-u.is_staff = u.is_superuser = True; u.set_password(pw); u.save()"
-cd browser_checks && node manage_e2e.mjs 1280 && node manage_e2e.mjs 412 && node upload_check.mjs; cd ..
-```
-Сразу после — удалить пользователя (вместе с его записями журнала) и файл с паролем:
-```bash
-../.venv/bin/python manage.py shell -c "from django.contrib.auth import get_user_model; get_user_model().objects.filter(username='ui-check').delete()"
-rm -f "$T/kireevonline-ui-check-pw.txt"
-```
-Сессию, созданную в `manage.py shell`, сервер не примет (у локального сервера случайный SECRET_KEY) — только вход
-через форму, как делает скрипт.
+Панель проверяется временным админом `ui-check` ТОЛЬКО в локальной базе: `run_all.mjs` сам создаёт его со
+случайным паролем (файл `kireevonline-ui-check-pw.txt` во временной папке системы) и в конце в любом случае
+удаляет пользователя (вместе с его записями журнала) и файл. Если прогон оборвали силой — проверить, что
+`ui-check` в базе нет. Сессию из `manage.py shell` сервер не примет (у локального сервера случайный
+SECRET_KEY) — скрипты входят через форму. Список проверок и что каждая проверяет — `browser_checks/README.md`.
 
 ## 4. Снимки для Романа
 `node view_shot.mjs <адрес> 1280 800 <файл>.png` и `node view_shot.mjs <адрес> 412 900 <файл>.png phone`,

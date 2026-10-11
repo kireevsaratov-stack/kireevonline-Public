@@ -14,5 +14,3 @@ chunk_tmp/
 # проверки в браузере: снимки и служебные файлы
 browser_checks/*.png
 browser_checks/lever/
-browser_checks/diag/
-browser_checks/staff_session.txt
