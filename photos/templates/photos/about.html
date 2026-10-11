@@ -1,0 +1,57 @@
+{% extends 'photos/base.html' %}
+{% block title %}Обо мне{% endblock %}
+{% block meta_desc %}Роман Киреев — фотолюбитель. Личная фотогалерея: фестивали, путешествия, прогулки и портреты.{% endblock %}
+{% block og_title %}Обо мне — Роман Киреев{% endblock %}
+{% block og_desc %}Фотография — моё хобби уже 4 года. Это скорее мой фотодневник, нежели портфолио.{% endblock %}
+
+{% block extra_head %}
+<style>
+.about{max-width:680px;margin:0 auto;padding:0 24px 88px}
+.about p{font-size:18px;line-height:1.75;color:var(--accent);margin-bottom:22px;letter-spacing:.01em}
+.about .about-lead{font-style:italic;font-size:22px;line-height:1.5;color:var(--text);text-align:center;margin-bottom:40px}
+.about-links{display:flex;justify-content:center;gap:32px;margin-top:44px;padding-top:28px;border-top:1px solid #222}
+.about-links a{font-family:"Oswald",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);transition:color .2s}
+.about-links a:hover{color:var(--text)}
+@media(max-width:560px){.about p{font-size:17px}.about .about-lead{font-size:20px}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-section-header">
+  <h1>Обо мне</h1>
+</div>
+
+<article class="about">
+  {# Портрет — добавить позже #}
+  <p class="about-lead">Меня зовут Роман, родом из города Харабали, уже 7&nbsp;лет живу в&nbsp;Москве.
+    Я интроверт, но при этом человек добрый и открытый. Люблю книги, музыку, фильмы
+    и современное искусство, короче, как все.</p>
+  <p>В фотографию пришёл четыре года назад, через выгорание на работе, увольнение и осознание,
+    что нет даже хобби. Выбор хобби был сугубо прагматичным: танцор из меня не ахти,
+    голоса нет, к игре на инструментах не склонен, зато люблю гулять. А что можно делать
+    во время прогулок? Фотографировать. Это дёшево и сердито. Поговорку «хочешь разорить
+    друга&nbsp;— подари ему фотоаппарат» услышал позже, и она оказалась до боли правдивой.
+    Так появилась первая камера&nbsp;— кропнутый Canon M50&nbsp;Mark&nbsp;II.</p>
+  <p>С камерой стал по-другому смотреть на мир. Фотография стала причиной выйти из дома,
+    поехать в какое-то конкретное место или на мероприятие: без фотоаппарата почти никогда
+    не пошёл бы на все эти фестивали, ограничился бы парками, в которых практически жил.
+    Есть такой вопрос: «Что бы вы делали, если бы вам больше не пришлось работать?» Продолжил
+    бы фотографировать.</p>
+  <p>С тех пор многое изменилось: теперь фотография для меня&nbsp;— искусство, от которого
+    очень далёк, но к которому всем сердцем стремлюсь. Больше всего люблю снимать улицы,
+    события и вещи. Портрет оказался не очень интересным, хотя, если посмотреть
+    на сайт, может показаться обратное. Люблю именно ловить кадр&nbsp;— живой, настоящий,
+    а не постановочную фотографию.</p>
+  <p>За четыре года через мои руки прошло больше десяти камер&nbsp;— долго искал своё и,
+    похоже, нашёл. Этим летом продал всё и оставил одну Leica Q3 28&nbsp;мм, у которой
+    «даже объектив не снимается».</p>
+  <p>Сайт был давней мечтой. Это скорее фотодневник, нежели портфолио. Здесь есть
+    фотографии, которые мне нравятся и по сей день, а есть те, от которых у меня
+    «вытекают глаза»,&nbsp;— короче, обычный дневник.</p>
+
+  <nav class="about-links" aria-label="Контакты">
+    <a href="https://vk.com/kireevromanyurevich" target="_blank" rel="noopener">VK</a>
+    <a href="https://t.me/RomanFromKharabali" target="_blank" rel="noopener">Telegram</a>
+  </nav>
+</article>
+{% endblock %}

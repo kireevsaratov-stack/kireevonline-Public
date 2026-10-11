@@ -1,0 +1,21 @@
+# Настройки инструментов разработки. Библиотеки сайта для сервера — в requirements.txt.
+[project]
+name = "kireevonline-gallery"
+description = "kireevonline.ru — личная фотогалерея (Django)"
+requires-python = ">=3.13"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+extend-exclude = ["photos/migrations"]
+
+[tool.ruff.lint]
+# E/W — оформление, F — ошибки, I — порядок импортов, UP — современный Python, B — частые ловушки
+select = ["E", "W", "F", "I", "UP", "B"]
+ignore = ["UP031"]  # подстановка через % — как в самом Django, менять незачем
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint.per-file-ignores]
+"deploy/archive.py" = ["E501"]  # длинные строки таблиц в инструкции по восстановлению

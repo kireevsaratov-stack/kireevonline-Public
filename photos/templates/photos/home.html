@@ -1,0 +1,87 @@
+{% extends 'photos/base.html' %}
+{% block title %}Роман Киреев — личная фотогалерея{% endblock %}
+{% block canonical_path %}/{% endblock %}
+{% block og_url_path %}/{% endblock %}
+{% block og_image %}{% if og_cover %}<meta property="og:image" content="https://kireevonline.ru{{ og_cover.image.url }}">{% endif %}{% endblock %}
+{% block schema %}
+<script nonce="{{ request.csp_nonce }}" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Роман Киреев",
+  "description": "Фотолюбитель. Личная фотогалерея.",
+  "url": "https://kireevonline.ru/",
+  "address": {"@type": "PostalAddress", "addressLocality": "Москва", "addressCountry": "RU"},
+  "sameAs": [
+    "https://vk.com/kireevromanyurevich",
+    "https://t.me/RomanFromKharabali"
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="hero fade-in">
+  <p class="hero-role">Фотолюбитель</p>
+  <h1 class="hero-title">Киреев Роман</h1>
+</section>
+
+<div class="filter-bar fade-in">
+  {% for cat in sections %}
+  <button type="button" class="filter-chip" data-filter="{{ cat.slug }}">{{ cat.name }}{% if cat.hidden %} ·{% endif %}</button>
+  {% endfor %}
+  <a class="filter-chip" href="{% url 'shuffle' %}">Барабан</a>
+</div>
+
+<div id="works" class="album-grid">
+  {% for cat in sections %}
+    {% if cat.albums.all %}
+      {% for sub in cat.albums.all %}
+        {% if not sub.hidden %}
+        {% with cover=sub.get_cover %}
+        {% if cover %}
+        <a class="album-card fade-in" data-section="{{ cat.slug }}" href="{% url 'album' sub.pk %}">
+          <div class="cover"><img src="{{ cover.get_thumb }}" alt="{{ sub.name }}" loading="lazy"></div>
+          <div class="album-title">{{ sub.name }}{% if sub.hidden or cat.hidden %} ·{% endif %}</div>
+        </a>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {% with cover=cat.get_cover %}
+      {% if cover %}
+      <a class="album-card fade-in" data-section="{{ cat.slug }}" href="{% url 'section' cat.slug %}">
+        <div class="cover"><img src="{{ cover.get_thumb }}" alt="{{ cat.name }}" loading="lazy"></div>
+        <div class="album-title">{{ cat.name }}{% if cat.hidden %} ·{% endif %}</div>
+      </a>
+      {% endif %}
+      {% endwith %}
+    {% endif %}
+  {% empty %}
+  <p style="grid-column:1/-1;text-align:center;font-family:'Oswald',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:60px 0">Фотографии появятся здесь</p>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.csp_nonce }}">
+(function(){
+  var chips=Array.prototype.slice.call(document.querySelectorAll('.filter-chip[data-filter]'));
+  var cards=Array.prototype.slice.call(document.querySelectorAll('.album-card[data-section]'));
+  function show(f){
+    cards.forEach(function(card){
+      card.style.display=(!f||card.dataset.section===f)?'':'none';
+    });
+  }
+  chips.forEach(function(chip){
+    chip.addEventListener('click',function(){
+      var wasActive=chip.classList.contains('active');
+      chips.forEach(function(c){c.classList.remove('active')});
+      if(wasActive){show(null);}              // повторный тап — снова все
+      else{chip.classList.add('active');show(chip.dataset.filter);}
+    });
+  });
+})();
+</script>
+{% endblock %}

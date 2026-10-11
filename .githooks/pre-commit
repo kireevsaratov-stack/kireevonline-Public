@@ -1,0 +1,20 @@
+#!/bin/sh
+# Перед каждым сохранением версии (git commit): проверка стиля кода и все быстрые автотесты.
+# Что-то не прошло — версия не сохранится. Включается один раз: git config core.hooksPath .githooks
+ROOT=$(git rev-parse --show-toplevel)
+BIN="$ROOT/../.venv/bin"
+LOG=$(mktemp)
+cd "$ROOT" || exit 1
+
+echo "Проверка стиля…"
+"$BIN/ruff" check --quiet . && "$BIN/ruff" format --check --quiet . || {
+  echo "✖ Стиль кода: см. выше (исправить: ruff check --fix . && ruff format .)"; exit 1; }
+
+echo "Автотесты…"
+if ! "$BIN/python" manage.py test photos --noinput >"$LOG" 2>&1 \
+   || ! "$BIN/python" -m unittest deploy/tests/test_guard.py >>"$LOG" 2>&1; then
+  cat "$LOG"; rm -f "$LOG"
+  echo "✖ Автотесты не прошли — версия не сохранена."; exit 1
+fi
+grep -E '^Ran ' "$LOG" | head -n 1
+rm -f "$LOG"

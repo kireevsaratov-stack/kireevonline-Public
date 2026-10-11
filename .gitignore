@@ -1,0 +1,18 @@
+*.pyc
+__pycache__/
+db.sqlite3
+media/
+staticfiles/
+.env
+.venv/
+venv/
+*.log
+upload_debug.log
+chunk_tmp/
+.DS_Store
+
+# проверки в браузере: снимки и служебные файлы
+browser_checks/*.png
+browser_checks/lever/
+browser_checks/diag/
+browser_checks/staff_session.txt

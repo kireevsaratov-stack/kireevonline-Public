@@ -1,0 +1,32 @@
+# Автотесты на GitHub при каждой отправке версии: стиль кода, тесты сайта,
+# выкладка/откат/автовозврат на копии сервера (без сети и без настоящего сервера).
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Библиотеки
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Стиль кода
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Тесты сайта
+        run: python manage.py test photos --noinput
+      - name: Выкладка, откат, автовозврат на копии сервера
+        run: |
+          git config --global user.name ci
+          git config --global user.email ci@example.com
+          KO_TEST_PY=$(which python) python -m unittest discover -s deploy/tests -t . -v

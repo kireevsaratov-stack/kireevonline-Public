@@ -1,0 +1,235 @@
+{% extends 'photos/base.html' %}
+{% block title %}Альбомы{% endblock %}
+{% block extra_head %}
+<meta name="robots" content="noindex">
+<style>
+.mg{max-width:980px;margin:0 auto;padding:0 24px 96px}
+.mg-help{color:var(--muted);font-size:14px;line-height:1.6;margin:0 auto 28px;max-width:980px;padding:0 24px}
+.mg ol{list-style:none;margin:0;padding:0}
+.mg-cat{border-top:1px solid #222;padding:18px 0 14px}
+.mg-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:52px;padding:4px 6px;border-radius:6px}
+.mg-row-cat .mg-name{font-family:"Oswald",sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.06em}
+.mg-albums{margin:6px 0 4px 26px}
+.mg-handle{cursor:grab;color:var(--muted);font-size:18px;padding:6px 4px;touch-action:none;user-select:none;line-height:1}
+.mg-thumb{width:44px;height:44px;border-radius:4px;overflow:hidden;background:#151515;flex:none}
+.mg-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mg-name{background:none;border:0;color:var(--text);font:inherit;font-size:16px;text-align:left;padding:4px 2px;cursor:text;
+  border-bottom:1px dashed transparent}
+.mg-name:hover{border-bottom-color:var(--muted)}
+.mg-name-input{background:#151515;border:1px solid #333;color:var(--text);font:inherit;font-size:16px;padding:6px 8px;border-radius:4px;min-width:240px}
+.mg-main{display:flex;align-items:baseline;gap:4px 12px;flex:1 1 260px;min-width:0;flex-wrap:wrap}
+.mg-meta{color:var(--muted);font-size:13px}
+.mg-ctrls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mg-switch{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;cursor:pointer;user-select:none}
+.mg-switch input{accent-color:#e44;width:16px;height:16px}
+.mg-arrows button,.mg-del{background:none;border:1px solid #333;color:var(--accent);border-radius:4px;font-size:13px;padding:4px 8px;cursor:pointer}
+.mg-arrows button:hover{border-color:var(--muted);color:var(--text)}
+.mg-link{color:var(--accent);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.mg-link:hover{color:var(--text)}
+.mg-del{border-color:#5a2222;color:#e66}
+.mg-del:hover{background:#e44;color:#fff;border-color:#e44}
+.mg-off > .mg-row .mg-name,.mg-off > .mg-row .mg-thumb{opacity:.45}
+.is-dragging > .mg-row{background:#161616;outline:1px solid #333}
+.mg-new{display:flex;gap:8px;margin:6px 0 0 26px;flex-wrap:wrap}
+.mg-new input{background:#111;border:1px solid #2a2a2a;color:var(--text);font:inherit;font-size:14px;padding:8px 10px;border-radius:4px;min-width:220px}
+.mg-new button{background:none;border:1px solid #333;color:var(--accent);border-radius:4px;font-size:13px;padding:8px 12px;cursor:pointer}
+.mg-new button:hover{border-color:var(--text);color:var(--text)}
+.mg-new-cat{margin:28px 0 0;border-top:1px solid #222;padding-top:22px}
+.mg-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#1b1b1b;border:1px solid #333;
+  color:var(--text);padding:10px 16px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:200}
+.mg-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.mg-toast.bad{border-color:#e44;color:#f88}
+@media(max-width:560px){
+  .mg{padding:0 12px 80px}.mg-albums,.mg-new{margin-left:8px}.mg-name-input{min-width:0;width:100%}
+  .mg-row{align-items:flex-start;padding:8px 4px}
+  .mg-main{flex:1 1 0;flex-direction:column;align-items:flex-start;gap:2px}
+  .mg-ctrls{flex-basis:100%;padding-left:30px;gap:12px}
+  .mg-album .mg-ctrls{padding-left:84px}
+  .mg-album + .mg-album{border-top:1px solid #1c1c1c}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-section-header">
+  <h1>Альбомы</h1>
+  <p class="section-count">Разделы и альбомы сайта</p>
+</div>
+<p class="mg-help">Порядок — перетащите за&nbsp;⠿ или стрелками. Название — нажмите на&nbsp;него. «Скрыт» — посетители
+  не&nbsp;видят. Тексты альбома — «тексты». Новые разделы и альбомы создаются скрытыми, удалить можно только пустые.
+  Фото между альбомами переносятся на&nbsp;странице альбома: «Выбрать фото» → «Перенести в&nbsp;альбом…».</p>
+
+<div class="mg js-manage" data-order="{% url 'panel:order' %}" data-toggle="{% url 'panel:toggle' %}"
+     data-rename="{% url 'panel:rename' %}" data-create="{% url 'panel:create' %}"
+     data-delete="{% url 'panel:delete' %}">
+  {% csrf_token %}
+  <ol class="mg-cats js-sort" data-kind="section">
+    {% for c in sections %}
+    <li class="mg-cat js-row{% if c.hidden %} mg-off{% endif %}" data-kind="section" data-id="{{ c.pk }}">
+      <div class="mg-row mg-row-cat">
+        <span class="mg-handle js-handle" title="Перетащить" aria-hidden="true">⠿</span>
+        <div class="mg-main">
+          <button type="button" class="mg-name js-rename" title="Переименовать">{{ c.name }}</button>
+          <span class="mg-meta">{{ c.album_list|length }} альб.{% if c.n_loose %} · {{ c.n_loose }} фото без альбома{% endif %}</span>
+        </div>
+        <div class="mg-ctrls">
+          <label class="mg-switch"><input type="checkbox" class="js-hidden"{% if c.hidden %} checked{% endif %}> скрыт</label>
+          <span class="mg-arrows"><button type="button" class="js-up" aria-label="Выше">↑</button> <button type="button" class="js-down" aria-label="Ниже">↓</button></span>
+          <a class="mg-link" href="{% url 'section' c.slug %}">открыть</a>
+          {% if c.can_delete %}<button type="button" class="mg-del js-delete">удалить</button>{% endif %}
+        </div>
+      </div>
+      <ol class="mg-albums js-sort" data-kind="album" data-section="{{ c.pk }}">
+        {% for a in c.album_list %}
+        <li class="mg-album js-row{% if a.hidden %} mg-off{% endif %}" data-kind="album" data-id="{{ a.pk }}">
+          <div class="mg-row">
+            <span class="mg-handle js-handle" title="Перетащить" aria-hidden="true">⠿</span>
+            {% with cov=a.get_cover %}<span class="mg-thumb">{% if cov %}<img src="{{ cov.get_thumb }}" alt="" loading="lazy">{% endif %}</span>{% endwith %}
+            <div class="mg-main">
+              <button type="button" class="mg-name js-rename" title="Переименовать">{{ a.name }}</button>
+              <span class="mg-meta">{% if a.place %}{{ a.place }} · {% endif %}{% if a.period %}{{ a.period }} · {% endif %}{{ a.n_photos }} фото</span>
+            </div>
+            <div class="mg-ctrls">
+              <label class="mg-switch"><input type="checkbox" class="js-hidden"{% if a.hidden %} checked{% endif %}> скрыт</label>
+              <span class="mg-arrows"><button type="button" class="js-up" aria-label="Выше">↑</button> <button type="button" class="js-down" aria-label="Ниже">↓</button></span>
+              <a class="mg-link" href="{% url 'panel:album_texts' a.pk %}">тексты</a>
+              <a class="mg-link" href="{% url 'album' a.pk %}">открыть</a>
+              {% if not a.n_all %}<button type="button" class="mg-del js-delete">удалить</button>{% endif %}
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+      <form class="mg-new js-create" data-kind="album" data-section="{{ c.pk }}">
+        <input name="name" maxlength="200" placeholder="Новый альбом в «{{ c.name }}»" aria-label="Название нового альбома">
+        <button type="submit">Создать альбом</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ol>
+  <form class="mg-new mg-new-cat js-create" data-kind="section">
+    <input name="name" maxlength="200" placeholder="Новый раздел" aria-label="Название нового раздела">
+    <button type="submit">Создать раздел</button>
+  </form>
+</div>
+<div class="mg-toast js-toast" role="status" aria-live="polite"></div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.csp_nonce }}">
+(function(){
+  var root=document.querySelector('.js-manage');
+  if(!root)return;
+  var csrf=root.querySelector('[name=csrfmiddlewaretoken]').value;
+  var toast=document.querySelector('.js-toast'), toastTimer;
+  function say(text,bad){
+    toast.textContent=text;toast.classList.toggle('bad',!!bad);toast.classList.add('on');
+    clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove('on')},2400);
+  }
+  function post(url,data){
+    var fd=new FormData();
+    Object.keys(data).forEach(function(k){[].concat(data[k]).forEach(function(v){fd.append(k,v)})});
+    fd.append('csrfmiddlewaretoken',csrf);
+    return fetch(url,{method:'POST',body:fd,credentials:'same-origin'})
+      .then(function(r){return r.json().catch(function(){return {ok:false,error:'Ошибка сервера ('+r.status+')'}})})
+      .then(function(d){if(!d.ok)throw new Error(d.error||'Не получилось');return d});
+  }
+  function rowsOf(list){return [].slice.call(list.children).filter(function(el){return el.classList.contains('js-row')})}
+  function saveOrder(list){
+    var data={kind:list.dataset.kind,ids:rowsOf(list).map(function(r){return r.dataset.id})};
+    if(list.dataset.section)data.section=list.dataset.section;
+    post(root.dataset.order,data).then(function(){say('Порядок сохранён')}).catch(function(e){say(e.message,true)});
+  }
+
+  // перетаскивание за ⠿ — мышью и пальцем; только внутри своего списка
+  var drag=null;
+  root.addEventListener('pointerdown',function(e){
+    var handle=e.target.closest('.js-handle');
+    if(!handle)return;
+    var row=handle.closest('.js-row');
+    e.preventDefault();
+    drag={row:row,list:row.parentNode,moved:false};
+    row.classList.add('is-dragging');
+    handle.setPointerCapture(e.pointerId);
+  });
+  root.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    var before=null, rows=rowsOf(drag.list);
+    for(var i=0;i<rows.length;i++){
+      if(rows[i]===drag.row)continue;
+      var box=rows[i].querySelector('.mg-row').getBoundingClientRect();
+      if(e.clientY<box.top+box.height/2){before=rows[i];break}
+    }
+    if(before!==drag.row.nextElementSibling&&before!==drag.row){drag.list.insertBefore(drag.row,before);drag.moved=true}
+  });
+  function endDrag(){
+    if(!drag)return;
+    drag.row.classList.remove('is-dragging');
+    if(drag.moved)saveOrder(drag.list);
+    drag=null;
+  }
+  root.addEventListener('pointerup',endDrag);
+  root.addEventListener('pointercancel',endDrag);
+
+  root.addEventListener('click',function(e){
+    var arrow=e.target.closest('.js-up,.js-down');
+    if(arrow){
+      var row=arrow.closest('.js-row'), list=row.parentNode, up=arrow.classList.contains('js-up');
+      var near=up?row.previousElementSibling:row.nextElementSibling;
+      if(!near)return;
+      if(up)list.insertBefore(row,near);else list.insertBefore(near,row);
+      saveOrder(list);
+      return;
+    }
+    var del=e.target.closest('.js-delete');
+    if(del){
+      var drow=del.closest('.js-row'), title=drow.querySelector('.js-rename').textContent;
+      if(!confirm('Удалить «'+title+'»? Он пустой.'))return;
+      post(root.dataset.delete,{kind:drow.dataset.kind,id:drow.dataset.id})
+        .then(function(){drow.parentNode.removeChild(drow);say('Удалено')})
+        .catch(function(err){say(err.message,true)});
+      return;
+    }
+    var name=e.target.closest('.js-rename');
+    if(name){
+      var nrow=name.closest('.js-row'), input=document.createElement('input'), done=false;
+      input.className='mg-name-input';input.value=name.textContent;input.maxLength=200;
+      name.parentNode.replaceChild(input,name);input.focus();input.select();
+      function finish(save){
+        if(done)return;done=true;
+        var value=input.value.trim();
+        if(!save||!value||value===name.textContent){input.parentNode.replaceChild(name,input);return}
+        post(root.dataset.rename,{kind:nrow.dataset.kind,id:nrow.dataset.id,name:value})
+          .then(function(d){name.textContent=d.name;input.parentNode.replaceChild(name,input);say('Название сохранено')})
+          .catch(function(err){input.parentNode.replaceChild(name,input);say(err.message,true)});
+      }
+      input.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'){ev.preventDefault();finish(true)}
+        if(ev.key==='Escape'){ev.preventDefault();finish(false)}
+      });
+      input.addEventListener('blur',function(){finish(true)});
+    }
+  });
+
+  root.addEventListener('change',function(e){
+    var box=e.target.closest('.js-hidden');
+    if(!box)return;
+    var row=box.closest('.js-row');
+    post(root.dataset.toggle,{kind:row.dataset.kind,id:row.dataset.id,hidden:box.checked?'1':'0'})
+      .then(function(d){row.classList.toggle('mg-off',d.hidden);say(d.hidden?'Скрыто от посетителей':'Видно посетителям')})
+      .catch(function(err){box.checked=!box.checked;say(err.message,true)});
+  });
+
+  root.addEventListener('submit',function(e){
+    var form=e.target.closest('.js-create');
+    if(!form)return;
+    e.preventDefault();
+    var value=form.querySelector('input[name=name]').value.trim();
+    if(!value)return;
+    var data={kind:form.dataset.kind,name:value};
+    if(form.dataset.section)data.section=form.dataset.section;
+    post(root.dataset.create,data).then(function(){location.reload()}).catch(function(err){say(err.message,true)});
+  });
+})();
+</script>
+{% endblock %}

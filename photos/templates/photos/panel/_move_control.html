@@ -1,0 +1,12 @@
+{# Перенос выбранных фото в другой альбом — показывается, когда что-то выбрано (см. initGallery, moveUrl). #}
+<span class="move-ctl js-move" style="display:none">
+  <select class="move-target js-move-target" aria-label="Перенести выбранные в альбом">
+    <option value="">Перенести в альбом…</option>
+    {% for cat in admin_sections %}{% if cat.albums.all %}
+    <optgroup label="{{ cat.name }}{% if cat.hidden %} ·{% endif %}">
+      {% for s in cat.albums.all %}{% if s.pk != current_album %}<option value="{{ s.pk }}">{{ s.name }}{% if s.hidden %} ·{% endif %}</option>{% endif %}{% endfor %}
+    </optgroup>
+    {% endif %}{% endfor %}
+  </select>
+  <button type="button" class="btn btn-sm js-move-selected">Перенести</button>
+</span>

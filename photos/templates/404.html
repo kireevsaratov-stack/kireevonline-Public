@@ -1,0 +1,22 @@
+{% extends 'photos/base.html' %}
+{% block title %}Страница не найдена{% endblock %}
+{% block meta_desc %}Страница не найдена.{% endblock %}
+
+{% block extra_head %}
+<meta name="robots" content="noindex">
+<style>
+.not-found{max-width:680px;margin:0 auto;padding:12vh 24px 120px;text-align:center}
+.not-found p{color:var(--muted);font-size:18px;line-height:1.6;margin:18px 0 36px}
+.not-found a{font-family:"Oswald",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.16em;color:var(--text);border-bottom:1px solid var(--muted);padding-bottom:4px}
+.not-found a:hover{border-bottom-color:var(--text)}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="not-found">
+  <p class="hero-role">Ошибка 404</p>
+  <h1 class="hero-title">Здесь пусто</h1>
+  <p>Такой страницы нет — возможно, ссылка устарела.</p>
+  <a href="{% url 'home' %}">В галерею</a>
+</section>
+{% endblock %}

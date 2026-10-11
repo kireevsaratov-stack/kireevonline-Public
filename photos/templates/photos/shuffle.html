@@ -1,0 +1,70 @@
+{% extends 'photos/base.html' %}
+{% block title %}Барабан{% endblock %}
+{% block meta_desc %}Случайные фотографии сайта — каждый раз в новом порядке.{% endblock %}
+{% block extra_head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block content %}
+<div class="page-section-header fade-in">
+  <h1>Барабан</h1>
+  <p class="section-count">{{ photos|length }} фото</p>
+</div>
+<div class="album-intro fade-in">
+  <p class="album-intro-text">Барабан&nbsp;— случайные фотографии сайта. Крути в&nbsp;своё удовольствие, правда, призов здесь не&nbsp;раздают.</p>
+</div>
+
+<div class="spin-wrap fade-in">
+  <button type="button" class="slot js-spin" aria-label="Вращайте барабан — перемешать фото">
+    <span class="slot-body"><span class="reel"><span class="strip"></span></span><span class="reel"><span class="strip"></span></span><span class="reel"><span class="strip"></span></span></span>
+    <span class="lever" aria-hidden="true"></span>
+  </button>
+  <div class="spin-label" aria-hidden="true">Вращайте барабан</div>
+</div>
+<div class="view-toggle fade-in">
+  <button type="button" class="view-btn js-view-grid active">Сетка</button>
+  <span class="view-sep" aria-hidden="true">|</span>
+  <button type="button" class="view-btn js-view-feed">Лента</button>
+</div>
+<div class="photo-masonry" id="masonry">
+  {% for photo in photos %}
+  <div class="photo-item fade-in" data-id="{{ photo.pk }}" data-full="{{ photo.image.url }}" data-album="{{ photo.album_url }}">
+    {# адрес превью сразу — только у первых 40 (BATCH в base.html), остальным — когда дойдёт очередь #}
+    <img {% if forloop.counter <= 40 %}src{% else %}data-src{% endif %}="{{ photo.get_thumb }}" alt="Фото Романа Киреева" loading="lazy">
+  </div>
+  {% endfor %}
+</div>
+<div class="load-more-wrap"><button type="button" class="btn js-load-more" style="display:none">Показать ещё</button></div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.csp_nonce }}">
+// Однорукий бандит: в окошках — первые три кадра ленты; барабаны останавливаются
+// на первых кадрах нового порядка, вместе с ними перемешивается сетка.
+(function(){
+  var slot=document.querySelector('.slot');
+  if(!slot)return;
+  function thumbOf(el){var i=el&&el.querySelector('img');return i?(i.getAttribute('src')||i.dataset.src||''):''}
+  var first=[].slice.call(document.querySelectorAll('#masonry .photo-item')).slice(0,3);
+  [].slice.call(slot.querySelectorAll('.reel')).forEach(function(r,k){
+    var i=document.createElement('img');i.src=thumbOf(first[k]);i.alt='';r.firstElementChild.appendChild(i);r.dataset.src=i.src;
+  });
+  var reels=[].slice.call(slot.querySelectorAll('.reel')), recent={};
+  window.__spinAnimate=function(newFirst,done){
+    var pool=[].slice.call(document.querySelectorAll('#masonry .photo-item img'))
+      .filter(function(i){return i.complete&&i.naturalWidth}).map(function(i){return i.getAttribute('src')});
+    var finals=newFirst.map(thumbOf), curs=reels.map(function(r){return r.dataset.src});
+    var strips=window.pickStrips(pool,finals.concat(curs),recent,reels.length,26);
+    recent={};
+    strips.forEach(function(s){s.forEach(function(u){recent[u]=1})});
+    window.spinReels(slot,finals,strips,done);
+  };
+  // чтобы на ленты хватило разных картинок уже на первое вращение, после загрузки страницы
+  // в фоне догружаем все превью первой порции (они и так в сетке, просто ниже экрана)
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      [].slice.call(document.querySelectorAll('#masonry .photo-item:not(.is-hidden) img')).forEach(function(i){i.loading='eager'});
+    },800);
+  });
+})();
+window.initGallery({});
+</script>
+{% endblock %}

@@ -1,0 +1,271 @@
+{% extends 'photos/base.html' %}
+{% block title %}Загрузка фото{% endblock %}
+
+{% block content %}
+<div class="upload-wrap">
+  <div class="page-section-header fade-in" style="padding-left:0;padding-right:0">
+    <h1>Загрузка фото</h1>
+  </div>
+
+  {% if backup_pending %}
+  <div class="alert backup-note fade-in">
+    С последнего бэкапа загружено <b>{{ backup_pending }}</b> фото — рекомендуется сделать резервную копию.
+    <details class="backup-howto"><summary>как сделать бэкап</summary>
+      Открой Терминал на Mac и набери команду: <code>backup</code> — копия базы и фото скачается к тебе.
+    </details>
+  </div>
+  {% elif backup_never %}
+  <div class="alert backup-note fade-in">
+    Резервная копия ещё не отмечалась. После загрузки сделай бэкап: в Терминале набери <code>backup</code>.
+  </div>
+  {% endif %}
+
+  <form id="upload-form">
+    {% csrf_token %}
+
+    <div class="form-group fade-in">
+      <label for="id_section">Раздел</label>
+      <select name="section" id="id_section" class="form-select" required>
+        <option value="">— выберите раздел —</option>
+        {% for cat in sections %}
+        <option value="{{ cat.pk }}">{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group fade-in">
+      <label for="id_album">Альбом <span style="color:var(--muted)">(необязательно)</span></label>
+      <select name="album" id="id_album" class="form-select">
+        <option value="">— без альбома —</option>
+      </select>
+    </div>
+
+    <div class="form-group fade-in">
+      <label>Фотографии</label>
+      <div class="dropzone" id="dropzone">
+        <input type="file" name="images" id="id_images" multiple accept="image/*" style="display:none">
+        <p class="dropzone-text">Перетащите файлы сюда или нажмите для выбора</p>
+        <p class="dropzone-sub">JPG, PNG, WEBP · грузятся частями, размер не ограничен; сервер сам уменьшит</p>
+      </div>
+      <div class="file-list" id="file-list"></div>
+      <p class="upload-status" id="upload-status"></p>
+    </div>
+
+    <div class="form-group fade-in">
+      <button type="button" class="btn" id="submit-btn">Загрузить</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ albums_by_section|json_script:"albums-by-section" }}
+<script nonce="{{ request.csp_nonce }}">
+(function(){
+  // альбомы по разделам — данными (json_script), а не вставкой в код: любое название безопасно
+  var catSubs = JSON.parse(document.getElementById('albums-by-section').textContent);
+
+
+  // Форма не отправляется обычным способом — фото уходят частями из скрипта ниже.
+  document.getElementById('upload-form').addEventListener('submit',function(e){e.preventDefault();});
+
+  var catSel=document.getElementById('id_section');
+  var subSel=document.getElementById('id_album');
+  var dz=document.getElementById('dropzone');
+  var fi=document.getElementById('id_images');
+  var fl=document.getElementById('file-list');
+  var statusEl=document.getElementById('upload-status');
+  var submitBtn=document.getElementById('submit-btn');
+
+  catSel.addEventListener('change',function(){
+    var subs=catSubs[this.value]||[];
+    subSel.innerHTML='<option value="">— без альбома —</option>';
+    subs.forEach(function(s){
+      var o=document.createElement('option');
+      o.value=s.id;o.textContent=s.name;
+      subSel.appendChild(o);
+    });
+  });
+
+  dz.addEventListener('click',function(){fi.click()});
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('drag-over')});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('drag-over')});
+  dz.addEventListener('drop',function(e){
+    e.preventDefault();dz.classList.remove('drag-over');
+    var dt=new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(function(f){dt.items.add(f)});
+    fi.files=dt.files;
+    renderFileList();
+  });
+  fi.addEventListener('change',renderFileList);
+
+  function renderFileList(){
+    fl.innerHTML='';
+    Array.from(fi.files).forEach(function(f,idx){
+      var p=document.createElement('p');
+      p.id='file-row-'+idx;
+      p.textContent=f.name+' ('+Math.round(f.size/1024)+' KB)';
+      fl.appendChild(p);
+    });
+    statusEl.textContent='';
+  }
+
+  function markRow(idx,mark,color){
+    var row=document.getElementById('file-row-'+idx);
+    if(row){row.textContent=mark+' '+row.textContent.replace(/^[✓✗⏳]\s/,'');row.style.color=color;}
+  }
+
+  function getToken(){
+    var el=document.querySelector('[name=csrfmiddlewaretoken]');
+    return el?el.value:'';
+  }
+
+  var CHUNK_URL = "{% url 'panel:upload_chunk' %}";
+  var CHUNK_SIZE = 400 * 1024; // ~400 КБ — гарантированно проходит лимит хостинга
+
+  // Загрузка одного файла частями: режем на кусочки и шлём по очереди.
+  // Сервер собирает их обратно и сам ужимает фото. Размер файла не важен.
+  var target={section:'',album:''};  // куда грузится вся партия — фиксируется при нажатии «Загрузить»
+
+  function uploadFileChunked(file, onProgress){
+    return new Promise(function(resolve, reject){
+      var total = Math.ceil(file.size / CHUNK_SIZE) || 1;
+      var uploadId = (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).replace(/[^a-z0-9]/gi, '');
+      var idx = 0;
+      function sendChunk(attempt){
+        var start = idx * CHUNK_SIZE;
+        var end = Math.min(start + CHUNK_SIZE, file.size);
+        var part = file.slice(start, end);
+        var fd = new FormData();
+        fd.append('csrfmiddlewaretoken', getToken());
+        fd.append('upload_id', uploadId);
+        fd.append('index', idx);
+        fd.append('total', total);
+        fd.append('chunk_size', CHUNK_SIZE);
+        fd.append('name', file.name);
+        fd.append('section', target.section);
+        fd.append('album', target.album);
+        fd.append('chunk', part, 'chunk');
+        fetch(CHUNK_URL, {method:'POST', body:fd})
+          .then(function(r){
+            var isJson=(r.headers.get('content-type')||'').indexOf('application/json')===0;
+            if(r.redirected || !isJson){
+              // вместо ответа загрузчика пришла страница (обычно — вход истёк): дальше слать бессмысленно
+              var lost=new Error('вход в панель истёк — войдите снова и повторите загрузку');
+              lost.fatal=true; lost.stopAll=true; throw lost;
+            }
+            return r.json().then(function(data){
+              if(!r.ok || !data || data.ok===false || (!data.done && data.received===undefined)){
+                var err = new Error((data&&data.error) ? data.error : ('код '+r.status));
+                err.fatal = !!(data && data.fatal);  // «это не фото» — повторять бессмысленно
+                throw err;
+              }
+              return data;
+            });
+          })
+          .then(function(data){
+            idx++;
+            if(onProgress) onProgress(idx, total);
+            if(data.done){ resolve(data); }
+            else if(idx<total){ sendChunk(1); }
+            else { reject(new Error('сервер не подтвердил сборку файла')); }
+          })
+          .catch(function(err){
+            // транзитный сбой — повторяем тот же кусок до 3 раз
+            if(!err.fatal && attempt < 3){
+              setTimeout(function(){ sendChunk(attempt + 1); }, 600 * attempt);
+            } else {
+              reject(err);
+            }
+          });
+      }
+      sendChunk(1);
+    });
+  }
+
+  // Уменьшаем фото до 2048px в браузере ПЕРЕД загрузкой.
+  // Если что-то не получилось — молча отправляем оригинал (откат).
+  var MAX_EDGE = 2048;
+  function downscaleFile(file){
+    return new Promise(function(resolve){
+      if(!file.type || file.type.indexOf('image/')!==0){ resolve(file); return; }
+      var settled=false;
+      function finish(res){ if(settled) return; settled=true; clearTimeout(guard); resolve(res||file); }
+      var guard=setTimeout(function(){ finish(file); }, 25000); // не зависаем на «тяжёлом» файле
+
+      function processBitmap(bmp){
+        try{
+          var w=bmp.naturalWidth||bmp.width, h=bmp.naturalHeight||bmp.height;
+          if(!w||!h){ finish(file); return; }
+          var scale=Math.min(1, MAX_EDGE/Math.max(w,h));
+          if(scale>=1){ finish(file); return; } // уже небольшое — шлём как есть
+          var cw=Math.round(w*scale), ch=Math.round(h*scale);
+          var canvas=document.createElement('canvas'); canvas.width=cw; canvas.height=ch;
+          canvas.getContext('2d').drawImage(bmp,0,0,cw,ch);
+          if(bmp.close){ try{bmp.close();}catch(e){} }
+          canvas.toBlob(function(blob){
+            if(blob && blob.size>0 && blob.size<file.size){
+              var nm=file.name.replace(/\.(png|webp|tiff?|heic|heif|bmp)$/i,'.jpg');
+              finish(new File([blob], nm, {type:'image/jpeg'}));
+            } else { finish(file); }
+          }, 'image/jpeg', 0.85);
+        }catch(e){ finish(file); }
+      }
+      function imgPath(){
+        try{
+          var url=URL.createObjectURL(file);
+          var im=new Image();
+          im.onload=function(){ URL.revokeObjectURL(url); processBitmap(im); };
+          im.onerror=function(){ URL.revokeObjectURL(url); finish(file); };
+          im.src=url;
+        }catch(e){ finish(file); }
+      }
+      if(window.createImageBitmap){
+        createImageBitmap(file).then(processBitmap).catch(imgPath);
+      } else { imgPath(); }
+    });
+  }
+
+  function uploadAll(){
+    var files=Array.from(fi.files);
+    if(!catSel.value){statusEl.style.color='';statusEl.textContent='Сначала выберите раздел.';return;}
+    if(files.length===0){statusEl.style.color='';statusEl.textContent='Сначала выберите фотографии.';return;}
+
+    submitBtn.disabled=true;
+    target={section:catSel.value, album:subSel.value};
+    catSel.disabled=true; subSel.disabled=true;  // выбор не меняется посреди партии
+    var ok=0,fail=0,i=0,lastErr='',stopped=false;
+
+    function next(){
+      if(i>=files.length || stopped){
+        statusEl.style.color='';
+        statusEl.textContent=(stopped?'Остановлено: ':'Готово: ')+'загружено '+ok+(fail?(', с ошибкой '+fail+(lastErr?(' — причина: '+lastErr):'')):'')+'.';
+        submitBtn.disabled=false; catSel.disabled=false; subSel.disabled=false;
+        return;
+      }
+      var f=files[i];
+      markRow(i,'⏳','');
+      statusEl.style.color='';
+      statusEl.textContent='Загрузка '+(i+1)+' из '+files.length+'…';
+      downscaleFile(f).then(function(toSend){
+        return uploadFileChunked(toSend, function(done,total){
+          var row=document.getElementById('file-row-'+i);
+          if(row){row.textContent='⏳ '+f.name+' ('+done+'/'+total+')';row.style.color='';}
+        });
+      })
+        .then(function(){ok++;var row=document.getElementById('file-row-'+i);
+          if(row){row.textContent='✓ '+f.name;row.style.color='#8fc';}
+        })
+        .catch(function(err){fail++;lastErr=(err&&err.message)?err.message:'неизвестно';if(err&&err.stopAll){stopped=true;}
+          var row=document.getElementById('file-row-'+i);
+          if(row){row.textContent='✗ '+f.name+' — '+lastErr;row.style.color='#faa';}
+        })
+        .finally(function(){i++;next();});
+    }
+    next();
+  }
+
+  submitBtn.addEventListener('click',uploadAll);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'photos/base.html' %}
+{% load typography %}
+{% block title %}{{ album.name }}{% endblock %}
+{% block meta_desc %}{% firstof album.intro album.description|striptags|truncatechars:160 as about_album %}{% if about_album %}{{ about_album }}{% else %}Альбом «{{ album.name }}» — фотографии Романа Киреева.{% endif %}{% endblock %}
+{% block og_title %}{{ album.name }} — KIREEVONLINE.RU{% endblock %}
+{% block og_desc %}{% firstof album.intro album.description|striptags|truncatechars:180 as about_album %}{% if about_album %}{{ about_album }}{% else %}Фотоальбом «{{ album.name }}» — KIREEVONLINE.RU{% endif %}{% endblock %}
+{% block og_image %}{% with cov=album.get_cover %}{% if cov %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ cov.image.url }}">{% endif %}{% endwith %}{% endblock %}
+
+{% block content %}
+<div class="page-section-header fade-in">
+  <a class="breadcrumb-back" href="{% url 'section' album.section.slug %}">{{ album.section.name }}</a>
+  <h1>{{ album.name }}</h1>
+  {% if album.hidden or album.section.hidden %}<p class="section-count">Скрыт от посетителей — видно только вам</p>{% endif %}
+  <p class="section-count">{% if album.place %}{{ album.place }} · {% endif %}{% if album.period %}{{ album.period }} · {% endif %}{{ photos|length }} фото</p>
+</div>
+
+{% if album.intro or album.description or album.gear %}
+<div class="album-intro fade-in">
+  {% if album.intro or album.description %}
+  <p class="album-intro-text">{% if album.intro %}{{ album.intro|nbsp_dash }}{% else %}{{ album.description|nbsp_dash|linebreaksbr }}{% endif %}{% if album.intro and album.description %}&nbsp;<button type="button" class="album-intro-more js-intro-toggle" aria-expanded="false" aria-controls="album-intro-full" aria-label="Подробнее об альбоме">+</button>{% endif %}</p>
+  {% endif %}
+  {% if album.intro and album.description %}
+  <div class="album-intro-full" id="album-intro-full">
+    <div class="album-notes">{{ album.description|nbsp_dash|linebreaks }}</div>
+  </div>
+  {% endif %}
+  {% if album.gear %}<p class="album-gear">Снято на {% for line in album.gear|gear_lines %}{% if not forloop.first %}<br>{% endif %}{{ line }}{% endfor %}</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="view-toggle fade-in">
+  <button type="button" class="view-btn js-view-grid active">Сетка</button>
+  <span class="view-sep" aria-hidden="true">|</span>
+  <button type="button" class="view-btn js-view-feed">Лента</button>
+</div>
+{% if user.is_staff %}
+<div class="manage-bar fade-in">
+  {% csrf_token %}
+  <button type="button" class="btn btn-sm js-select-toggle">Выбрать фото</button>
+  <button type="button" class="btn btn-sm btn-danger js-delete-selected" style="display:none">Удалить выбранные (0)</button>
+  {% include 'photos/panel/_move_control.html' with current_album=album.pk %}
+</div>
+{% endif %}
+<div class="photo-masonry" id="masonry">
+  {% for photo in photos %}
+  <div class="photo-item fade-in{% if photo.pk == cover_id %} is-cover{% endif %}" data-id="{{ photo.pk }}" data-full="{{ photo.image.url }}" data-caption="{{ photo.title }}">
+    {# адрес превью сразу — только у первых 40 (BATCH в base.html), остальным — когда дойдёт очередь #}
+    <img {% if forloop.counter <= 40 %}src{% else %}data-src{% endif %}="{{ photo.get_thumb }}" alt="{{ album.name }} — фото Романа Киреева" loading="lazy">
+    {% if user.is_staff %}<button type="button" class="cover-star" title="Сделать обложкой">★</button><span class="photo-check"></span>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+<div class="load-more-wrap"><button type="button" class="btn js-load-more" style="display:none">Показать ещё</button></div>
+
+{% if siblings %}
+<div class="more-divider fade-in"><span>Другие альбомы</span></div>
+<div class="album-grid">
+  {% for s in siblings %}{% if s.cover %}
+  <a class="album-card fade-in" href="{{ s.url }}">
+    <div class="cover"><img src="{{ s.cover.get_thumb }}" alt="{{ s.name }}" loading="lazy"></div>
+    <div class="album-title">{{ s.name }}{% if s.hidden %} ·{% endif %}</div>
+  </a>
+  {% endif %}{% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.csp_nonce }}">window.initGallery({deleteUrl:"{% url 'panel:delete_photos' %}",coverUrl:"{% url 'panel:set_cover' %}",moveUrl:"{% url 'panel:move_photos' %}"})</script>
+{% endblock %}

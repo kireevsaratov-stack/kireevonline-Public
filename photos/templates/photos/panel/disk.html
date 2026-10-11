@@ -1,0 +1,59 @@
+{% extends 'photos/base.html' %}
+{% block title %}Статистика{% endblock %}
+
+{% block content %}
+<div class="page-section-header fade-in">
+  <h1>Статистика</h1>
+</div>
+
+<div class="stats-wrap fade-in">
+  {% csrf_token %}
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num">{{ photo_count }}</div><div class="stat-label">Фотографий в базе</div></div>
+    <div class="stat-card"><div class="stat-num">{{ section_count }}</div><div class="stat-label">Разделов</div></div>
+    <div class="stat-card"><div class="stat-num">{{ album_count }}</div><div class="stat-label">Альбомов</div></div>
+    <div class="stat-card"><div class="stat-num">{{ db_size_h }}</div><div class="stat-label">Вес фото из базы</div></div>
+    <div class="stat-card"><div class="stat-num">{{ total_disk_h }}</div><div class="stat-label">Всего в папке media</div></div>
+    <div class="stat-card {% if orphan_count %}stat-warn{% endif %}"><div class="stat-num">{{ orphan_count }} · {{ orphan_size_h }}</div><div class="stat-label">Осиротевшие файлы</div></div>
+    <a class="stat-card stat-card-link {% if trash_count %}stat-warn{% endif %}" href="{% url 'panel:trash' %}"><div class="stat-num">{{ trash_count }}{% if trash_count %} · {{ trash_size_h }}{% endif %}</div><div class="stat-label">В корзине → открыть</div></a>
+    <div class="stat-card"><div class="stat-num">{{ account_free_h }}</div><div class="stat-label">Свободно из {{ quota_h }}</div></div>
+    <div class="stat-card"><div class="stat-num">{{ account_used_h }} · {{ account_pct }}%</div><div class="stat-label">Занято аккаунтом</div></div>
+  </div>
+
+  {% if orphan_count %}
+  <div class="stats-section">
+    <p class="stats-note">Эти файлы лежат на диске, но ни одно фото в базе на них не ссылается (остались от удалённых через админку фото). Их можно безопасно удалить — освободится {{ orphan_size_h }}.</p>
+    <button type="button" class="btn btn-danger js-clean-orphans">Удалить осиротевшие файлы ({{ orphan_count }})</button>
+    <ul class="orphan-list">
+      {% for o in orphans %}<li>{{ o.name }} — {{ o.size_h }}</li>{% endfor %}
+      {% if orphan_count > 50 %}<li>… и ещё {{ orphan_count|add:"-50" }}</li>{% endif %}
+    </ul>
+  </div>
+  {% else %}
+  <p class="stats-note">Осиротевших файлов нет — всё чисто. Вес фото из базы и вес папки media совпадают.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.csp_nonce }}">
+(function(){
+  var btn=document.querySelector('.js-clean-orphans');
+  if(!btn)return;
+  btn.addEventListener('click',function(){
+    if(!confirm('Стереть файлы, на которые не ссылается ни одно фото (старше суток)? Вернуть их будет нельзя.'))return;
+    var tokenEl=document.querySelector('[name=csrfmiddlewaretoken]');
+    var fd=new FormData();
+    if(tokenEl)fd.append('csrfmiddlewaretoken',tokenEl.value);
+    btn.disabled=true;btn.textContent='Удаляю…';
+    fetch("{% url 'panel:clean_orphans' %}",{method:'POST',body:fd})
+      .then(function(r){return r.json()})
+      .then(function(d){
+        if(d&&d.ok){alert('Удалено файлов: '+d.removed+'. Освобождено: '+d.freed+'. Обновляю страницу.');location.reload()}
+        else{throw new Error()}
+      })
+      .catch(function(){btn.disabled=false;btn.textContent='Не удалось — повторить';});
+  });
+})();
+</script>
+{% endblock %}

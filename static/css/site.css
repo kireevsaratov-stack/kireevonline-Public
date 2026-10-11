@@ -1,0 +1,866 @@
+/* Стили всего сайта kireevonline.ru (вынесены из base.html 08.10.2026). */
+
+/* Oswald — со своего сервера (08.10.2026): страницы ни к кому, кроме kireevonline.ru, не обращаются.
+   Один «переменный» файл на алфавит покрывает все начертания 200–700. Лицензия — static/fonts/OFL.txt. */
+@font-face{font-family:"Oswald";font-style:normal;font-weight:200 700;font-display:swap;src:url("../fonts/oswald-cyrillic.woff2") format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:"Oswald";font-style:normal;font-weight:200 700;font-display:swap;src:url("../fonts/oswald-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+.logout-form{margin:0}.logout-form button{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-transform:inherit;letter-spacing:inherit}
+:root{
+  --bg:#000;
+  --text:#fff;
+  --muted:#999;
+  --border:#fff;
+  --nav-h:68px;
+  --accent:#e4e4e4;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:Helvetica,Arial,sans-serif;
+  font-weight:300;
+  font-size:16px;
+  line-height:1.5;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+h1,h2,h3,h4{
+  font-family:"Oswald",sans-serif;
+  font-weight:400;
+  font-style:normal;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+
+/* ── NAV ──────────────────────────────────────────── */
+.page-header{
+  position:fixed;
+  top:0;left:0;right:0;
+  height:var(--nav-h);
+  z-index:100;
+  transition:background .3s, backdrop-filter .3s;
+}
+.page-header.scrolled{
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.page-header .inner{
+  max-width:1280px;
+  margin:0 auto;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 40px;
+}
+
+.logo-link{
+  display:inline-flex;
+  align-items:center;
+  font-family:"Oswald",sans-serif;
+  font-size:19px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  white-space:nowrap;
+  color:var(--text);
+  border-bottom:1px solid rgba(255,255,255,.45);
+  padding-bottom:3px;
+  transition:opacity .2s,border-color .2s;
+}
+.logo-link:hover{opacity:.85;border-bottom-color:var(--text)}
+
+/* Кнопка-гамбургер (только мобильные) */
+.nav-toggle{
+  display:none;
+  background:none;border:none;cursor:pointer;
+  width:34px;height:34px;padding:0;position:relative;
+}
+.nav-toggle span{
+  display:block;position:absolute;left:5px;right:5px;height:2px;
+  background:var(--text);transition:transform .3s,opacity .3s;
+}
+.nav-toggle span:nth-child(1){top:10px}
+.nav-toggle span:nth-child(2){top:16px}
+.nav-toggle span:nth-child(3){top:22px}
+.page-header.nav-open .nav-toggle span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.page-header.nav-open .nav-toggle span:nth-child(2){opacity:0}
+.page-header.nav-open .nav-toggle span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+
+.menu-list{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  gap:0;
+}
+.menu-item{position:relative;display:flex;align-items:center}
+.menu-item .link{
+  display:block;
+  padding:0 14px;
+  font-family:"Oswald",sans-serif;
+  font-size:16px;
+  font-weight:300;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  line-height:var(--nav-h);
+  color:var(--accent);
+  white-space:nowrap;  /* не переносить пункт на две строки; не влезает меню — сворачиваем в гамбургер (nav-compact) */
+  transition:color .2s;
+  cursor:pointer;
+}
+.menu-item:not(:first-child)::before{
+  content:"·";
+  color:var(--muted);
+  font-size:16px;
+  line-height:var(--nav-h);
+  pointer-events:none;
+}
+.menu-item .link:hover{color:var(--text)}
+.acc-plus{display:none}
+.menu-item .link.active{color:var(--text);text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:1px}
+.menu-divider{width:1px;height:18px;background:var(--muted);opacity:.5;align-self:center;margin:0 4px}
+.menu-divider::before{display:none !important}
+.menu-item.-social::before{display:none !important}
+.icon-link{display:flex;align-items:center;gap:8px;padding:0 10px}
+.icon-link svg{width:18px;height:18px;fill:currentColor;display:block}
+.icon-label{display:none}
+
+/* dropdown */
+.menu-item.-parent .submenu{
+  display:none;
+  position:absolute;
+  top:100%;left:0;
+  min-width:220px;
+  background:#111;
+  border:1px solid #222;
+  padding:8px 0;
+}
+.menu-item.-parent.-right .submenu{left:auto;right:0}  /* у правого края — раскрывается влево */
+/* много альбомов — ограничиваем высоту и включаем прокрутку внутри списка */
+.submenu-list{
+  list-style:none;
+  max-height:calc(100vh - var(--nav-h) - 24px);
+  overflow-y:auto;
+}
+@media(min-width:761px){.page-header:not(.nav-compact) .menu-item.-parent:hover .submenu{display:block}}
+.submenu-list .menu-item::before{display:none}
+.submenu-list .link{
+  display:block;
+  padding:10px 20px;
+  font-size:13px;
+  line-height:1.4;
+  color:var(--accent);
+  border-left:2px solid transparent;
+  transition:border-color .2s,color .2s;
+}
+.submenu-list .link:hover{
+  color:var(--text);
+  border-left-color:var(--border);
+}
+
+/* ── MAIN ─────────────────────────────────────────── */
+.page-main{
+  padding-top:var(--nav-h);
+  min-height:100vh;
+}
+
+/* ── HERO ─────────────────────────────────────────── */
+.hero{
+  padding:40px 40px 12px;
+  max-width:1280px;
+  margin:0 auto;
+  text-align:center;
+}
+.hero-role{
+  font-family:"Oswald",sans-serif;
+  font-size:14px;
+  font-weight:300;
+  text-transform:uppercase;
+  letter-spacing:.42em;
+  color:var(--muted);
+  margin-bottom:14px;
+  padding-left:.42em;
+}
+.hero-title{
+  font-family:"Oswald",sans-serif;
+  font-size:clamp(48px,7vw,96px);
+  font-weight:400;
+  text-transform:uppercase;
+  letter-spacing:.01em;
+  line-height:.95;
+  margin-bottom:20px;
+}
+.hero-cats{
+  max-width:840px;
+  margin:0 auto;
+  line-height:2.2;
+  word-break:normal;
+}
+.hero-cats a{
+  font-family:"Oswald",sans-serif;
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--text);
+  white-space:nowrap;
+}
+.hero-cats a.sub{color:var(--muted)}
+.hero-cats a:hover{text-decoration:underline;text-underline-offset:3px}
+.hero-cats .sep{color:var(--muted)}
+
+/* ── Фильтр-плашки разделов ──────────────────────── */
+.filter-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:28px;margin:2px auto 36px;padding:0 20px}
+.filter-chip{
+  position:relative;
+  padding:6px 2px;
+  font-family:"Oswald",sans-serif;
+  font-size:15px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  background:none;
+  border:none;
+  color:var(--muted);
+  cursor:pointer;
+  transition:color .2s,text-shadow .2s;
+}
+.filter-chip::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:2px;
+  background:var(--text);
+  transform:scaleX(0);
+  transform-origin:center;
+  transition:transform .25s ease;
+}
+.filter-chip:hover{color:var(--text)}
+a.filter-chip{text-decoration:none;display:inline-block}
+.filter-chip.active{
+  color:var(--text);
+  text-shadow:0 0 14px rgba(255,255,255,.45);
+}
+.filter-chip.active::after{transform:scaleX(1)}
+.btn{
+  display:inline-block;
+  border:1px solid var(--border);
+  padding:10px 28px;
+  font-family:"Oswald",sans-serif;
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  transition:background .2s,color .2s;
+}
+.btn:hover{background:var(--text);color:var(--bg)}
+
+/* ── LISTING (album grid, tankovs style) ─────────── */
+.listing{
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 40px 80px;
+}
+.listing-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:2px;
+}
+.listing-item{position:relative;overflow:hidden}
+.listing-link{
+  display:block;
+  position:relative;
+  overflow:hidden;
+  aspect-ratio:4/5;
+}
+.listing-link img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  transition:transform .6s cubic-bezier(.25,.46,.45,.94);
+}
+.listing-link:hover img{transform:scale(1.03)}
+
+.listing-caption{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  padding:40px 20px 20px;
+  background:linear-gradient(transparent,rgba(0,0,0,.7));
+  transform:translateY(100%);
+  transition:transform .35s ease;
+}
+.listing-link:hover .listing-caption{transform:translateY(0)}
+
+.listing-title{
+  font-family:"Oswald",sans-serif;
+  font-size:15px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  color:var(--text);
+}
+.listing-title span{
+  border-bottom:1px solid var(--border);
+  padding-bottom:2px;
+}
+
+/* placeholder canvas (color-tinted bg before image loads) */
+.listing-placeholder{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* ── ALBUM GRID (tankov-style) ────────────────────── */
+.album-grid{
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 40px 80px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:28px 16px;
+}
+.album-card{
+  display:block;
+}
+.album-card .cover{
+  position:relative;
+  overflow:hidden;
+  aspect-ratio:4/5;
+  border-radius:10px;
+}
+.album-card img{
+  width:100%;height:100%;
+  object-fit:cover;
+  transition:transform .6s cubic-bezier(.25,.46,.45,.94);
+}
+.album-card:hover img{transform:scale(1.04)}
+.album-title{
+  margin-top:12px;
+  font-family:"Oswald",sans-serif;
+  font-size:15px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  text-align:center;
+  color:var(--text);
+}
+.album-card:hover .album-title{text-decoration:underline;text-underline-offset:4px}
+
+/* ── PHOTO GRID (tankov-style justified rows; JS задаёт размеры) ── */
+.photo-masonry{
+  position:relative;
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 40px 80px;
+  opacity:0;
+  transition:opacity .25s;
+}
+.photo-masonry.is-laid{opacity:1}
+.photo-masonry.is-spinning{opacity:0;pointer-events:none;transition:opacity .4s}
+.photo-masonry.is-revealing{transition:opacity .7s ease}
+.spin-wrap{display:flex;flex-direction:column;align-items:center;margin:-4px auto 22px;padding:0 20px}
+.slot{display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;color:inherit;-webkit-tap-highlight-color:transparent}
+.slot-body{display:flex;gap:5px;padding:7px;border:2px solid var(--text);border-radius:10px;background:#0b0b0b}
+.reel{display:block;width:54px;height:72px;overflow:hidden;border-radius:4px;background:#111;position:relative}
+.reel::after{content:"";position:absolute;inset:0;background:linear-gradient(#000,transparent 28%,transparent 72%,#000);opacity:.55;pointer-events:none}
+.strip{display:flex;flex-direction:column;will-change:transform;transition:filter .35s}
+.strip.fast{filter:blur(1.6px)}
+.strip img{width:54px;height:72px;object-fit:cover;display:block}
+/* рычаг: стержень (::after) и шарик (::before) двигаются отдельно — стержень наклоняется
+   к зрителю (укорачивается от основания), шарик опускается вместе с его концом и остаётся круглым */
+.lever{display:block;width:18px;height:56px;position:relative;top:-6px}
+.lever::after{content:"";position:absolute;left:6px;bottom:0;width:6px;height:44px;background:var(--text);border-radius:3px;transform-origin:50% 100%}
+.lever::before{content:"";position:absolute;left:0;top:0;width:18px;height:18px;border-radius:50%;background:var(--text);transition:box-shadow .2s;z-index:1}
+.slot:hover .lever::before{box-shadow:0 0 0 4px rgba(255,255,255,.2)}
+.lever.pull::after{animation:lever-arm .9s ease}
+.lever.pull::before{animation:lever-knob .9s ease}
+@keyframes lever-arm{40%{transform:scaleY(.45)}100%{transform:none}}
+@keyframes lever-knob{40%{transform:translateY(24px)}100%{transform:none}}
+.spin-label{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+@media(max-width:560px){.reel{width:46px;height:62px}.strip img{width:46px;height:62px}}
+.photo-item{
+  position:absolute;
+  overflow:hidden;
+  margin:0;
+}
+.photo-item img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  transition:transform .6s cubic-bezier(.25,.46,.45,.94);
+}
+.photo-item:hover img{transform:scale(1.02)}
+
+/* ── Управление фото (только для админа) ───────────── */
+.manage-bar{
+  max-width:1280px;margin:0 auto;padding:0 40px 16px;
+  display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+}
+.btn-sm{padding:8px 18px;font-size:12px}
+.btn-danger{border-color:#e44;color:#e44}
+.btn-danger:hover{background:#e44;color:#fff}
+.move-ctl{gap:8px;align-items:center;flex-wrap:wrap}
+.move-target{background:#111;border:1px solid #333;color:var(--text);font-size:13px;padding:7px 10px;border-radius:4px;max-width:260px}
+.photo-check{
+  position:absolute;top:8px;right:8px;
+  width:26px;height:26px;border:2px solid #fff;border-radius:50%;
+  background:rgba(0,0,0,.45);display:none;z-index:4;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35);
+}
+.photo-masonry.select-mode .photo-check{display:block}
+.photo-masonry.select-mode .photo-item{cursor:pointer}
+.photo-item.selected .photo-check{background:#e44;border-color:#e44}
+.photo-item.selected img{opacity:.5}
+.cover-star{
+  position:absolute;top:6px;left:6px;z-index:5;
+  width:30px;height:30px;border:none;border-radius:50%;
+  background:rgba(0,0,0,.5);color:#fff;cursor:pointer;
+  font-size:16px;line-height:30px;text-align:center;padding:0;
+  opacity:.75;transition:opacity .2s,color .2s,transform .2s;
+}
+.cover-star:hover{opacity:1;color:#ffd34d;transform:scale(1.1)}
+.photo-item.is-cover .cover-star{color:#ffd34d;opacity:1;background:rgba(0,0,0,.7)}
+.is-hidden{display:none !important}
+.load-more-wrap{text-align:center;padding:0 40px 80px}
+.more-title{max-width:1280px;margin:0 auto;padding:16px 40px 20px;font-size:clamp(20px,3vw,28px);letter-spacing:.03em}
+
+/* ── Вид-переключатель (сетка / лента) ────────────── */
+.view-toggle{max-width:1280px;margin:0 auto;padding:0 40px 14px;display:none;justify-content:center;align-items:center;gap:14px}
+.view-btn{
+  background:none;border:none;padding:0;cursor:pointer;
+  font-family:"Oswald",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.16em;
+  color:var(--muted);opacity:.85;transition:color .2s;
+}
+.view-btn:hover{color:var(--text)}
+.view-btn.active{color:var(--text)}
+.view-sep{color:var(--muted);opacity:.5;font-size:13px}
+
+/* Лента-режим: одна фотография в ширину, тонкие разделители */
+.photo-masonry.view-feed{
+  display:block;
+  max-width:780px;
+  margin:0 auto;
+  padding:0 0 60px;
+  opacity:1;
+  height:auto !important;
+}
+.view-feed .photo-item{position:static !important;aspect-ratio:unset !important;overflow:hidden;display:block;width:100% !important;height:auto !important;left:auto !important;top:auto !important;margin:0 0 3px}
+.view-feed .photo-item:last-child{margin-bottom:0}
+.view-feed .photo-item.wide{grid-column:auto !important}
+.view-feed .photo-item img{width:100%;height:auto;max-height:none;object-fit:contain;transform:none !important;transition:none}
+.view-feed .photo-caption{display:none}
+.photo-item .photo-caption{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  padding:40px 16px 16px;
+  background:linear-gradient(transparent,rgba(0,0,0,.65));
+  opacity:0;
+  transition:opacity .3s;
+  font-family:"Oswald",sans-serif;
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.photo-item:hover .photo-caption{opacity:1}
+
+/* ── PHOTO GRID (equal cells) ────────────────────── */
+.photo-grid{
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 40px 80px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:2px;
+}
+.photo-grid .photo-item{
+  aspect-ratio:1;
+  margin-bottom:0;
+}
+.photo-grid .photo-item img{
+  width:100%;height:100%;
+  object-fit:cover;
+}
+
+/* ── PAGE HEADER (breadcrumb area) ───────────────── */
+.page-section-header{
+  max-width:1280px;
+  margin:0 auto;
+  padding:48px 40px 38px;
+  text-align:center;
+}
+.page-section-header h1{
+  font-family:"Oswald",sans-serif;
+  font-size:clamp(36px,6vw,72px);
+  font-weight:400;
+  text-transform:uppercase;
+  letter-spacing:.01em;
+  line-height:1;
+}
+.breadcrumb{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:16px;
+}
+.breadcrumb a{color:var(--muted);border-bottom:1px solid transparent;transition:border-color .2s}
+.breadcrumb a:hover{border-bottom-color:var(--muted)}
+.breadcrumb span{margin:0 8px}
+.section-count{font-family:"Oswald",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:8px}
+.breadcrumb-back{display:inline-block;font-family:"Oswald",sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;transition:color .2s}
+.breadcrumb-back:hover{color:var(--text)}
+/* Описание альбома (показывается только если заполнено) */
+/* Вступление к альбому: 1–2 строки сразу, «+» раскрывает полное описание и технику */
+.album-intro{max-width:680px;margin:-18px auto 18px;padding:0 24px;text-align:center}
+.album-intro-text{font-family:Helvetica,Arial,sans-serif;font-weight:300;font-size:17px;line-height:1.6;color:var(--accent);letter-spacing:.01em;margin:0;text-wrap:balance}
+.album-intro-more{background:none;border:none;cursor:pointer;color:var(--muted);font-family:"Oswald",sans-serif;font-size:20px;font-weight:300;line-height:1;padding:0 4px;display:inline-block;vertical-align:-1px;transition:color .2s,transform .2s}
+.album-intro-more:hover,.album-intro-more:focus-visible{color:var(--text)}
+.album-intro.open .album-intro-more{transform:rotate(45deg)}
+.album-intro-full{display:none;margin-top:14px;font-family:Helvetica,Arial,sans-serif;font-weight:300;font-size:16px;line-height:1.7;color:var(--accent);letter-spacing:.01em}
+.album-intro.open .album-intro-full{display:block}
+.album-intro-full p{margin:0 0 10px}
+.album-notes{text-align:left;margin:4px 0 18px}
+.album-notes p{margin:0 0 14px}
+.album-gear{font-family:"Oswald",sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin:10px 0 0;line-height:1.7;text-wrap:balance}
+@media(max-width:560px){.album-intro{margin-top:-10px}.album-intro-text{font-size:16px}.album-intro-full{font-size:15px}}
+/* Разделитель «Другие альбомы» (в стиле tankov) */
+.more-divider{max-width:1280px;margin:40px auto 26px;padding:0 40px;display:flex;align-items:center;gap:22px}
+.more-divider::before,.more-divider::after{content:"";flex:1 1 0;height:1px;background:var(--border)}
+.more-divider span{font-family:"Oswald",sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);white-space:nowrap}
+/* Корзина (staff) */
+.trash-item{position:relative;display:block;cursor:pointer}
+.trash-item .trash-check{position:absolute;top:8px;left:8px;width:20px;height:20px;z-index:2;cursor:pointer}
+.trash-item.sel .cover{outline:3px solid var(--text);outline-offset:-3px}
+.trash-empty-msg{text-align:center;color:var(--muted);padding:50px 20px;font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.1em}
+
+/* ── PHOTO COUNT ──────────────────────────────────── */
+.photo-count{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-top:8px;
+}
+
+/* ── FOOTER ───────────────────────────────────────── */
+.page-footer{
+  border-top:1px solid #1a1a1a;
+  padding:40px;
+  max-width:1280px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.footer-copy{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+}
+.social-links{
+  list-style:none;
+  display:flex;
+  gap:20px;
+}
+.social-links a{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  border-bottom:1px solid transparent;
+  padding-bottom:1px;
+  transition:color .2s,border-color .2s;
+}
+.social-links a:hover{color:var(--text);border-color:var(--text)}
+
+/* ── FADE-IN ANIMATION ────────────────────────────── */
+.fade-in{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+.fade-in.visible{opacity:1;transform:none}
+
+/* ── LIGHTBOX ─────────────────────────────────────── */
+.lightbox{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#000;
+  z-index:1000;
+  align-items:center;
+  justify-content:center;
+}
+.lightbox.open{display:flex}
+.lightbox-img{
+  max-width:100vw;
+  max-height:100vh;
+  object-fit:contain;
+  user-select:none;
+}
+.lightbox-close{
+  position:absolute;
+  top:16px;right:18px;
+  z-index:1002;
+  width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.4);border-radius:50%;
+  font-size:26px;
+  font-weight:300;
+  color:var(--text);
+  cursor:pointer;
+  line-height:1;
+  opacity:.8;
+  transition:opacity .2s;
+}
+.lightbox-close:hover{opacity:1}
+.lightbox-arrow{
+  position:absolute;
+  top:50%;transform:translateY(-50%);
+  z-index:1001;
+  width:48px;height:48px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.4);border-radius:50%;
+  font-size:30px;
+  font-weight:300;
+  color:var(--text);
+  cursor:pointer;
+  opacity:.75;
+  transition:opacity .2s,background .2s;
+  user-select:none;
+}
+.lightbox-arrow:hover{opacity:1;background:rgba(0,0,0,.65)}
+.lightbox-prev{left:12px}
+.lightbox-next{right:12px}
+.lightbox-counter{
+  position:absolute;
+  bottom:20px;left:50%;
+  transform:translateX(-50%);
+  font-family:"Oswald",sans-serif;
+  font-size:13px;
+  letter-spacing:.1em;
+  color:var(--muted);
+}
+.lightbox-name{
+  position:absolute;
+  bottom:42px;left:50%;
+  transform:translateX(-50%);
+  max-width:80vw;
+  font-family:"Oswald",sans-serif;
+  font-size:13px;
+  letter-spacing:.04em;
+  color:var(--text);
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:none;
+}
+.lightbox-album{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);z-index:1002;display:none;font-family:"Oswald",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.12em;padding:9px 18px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.55);color:var(--text);text-decoration:none;white-space:nowrap;transition:background .2s,color .2s}
+.lightbox-album:hover{background:#fff;color:#000}
+.lightbox-del{
+  position:absolute;
+  top:18px;left:18px;
+  font-family:"Oswald",sans-serif;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  padding:8px 16px;
+  background:rgba(0,0,0,.55);
+  border:1px solid #e44;
+  color:#e44;
+  cursor:pointer;
+  display:none;
+  z-index:6;
+  transition:background .2s,color .2s;
+}
+.lightbox-del:hover{background:#e44;color:#fff}
+
+/* ── STATS PAGE ───────────────────────────────────── */
+.stats-wrap{max-width:1000px;margin:0 auto;padding:0 40px 80px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:36px}
+.stat-card{border:1px solid var(--border);padding:26px 20px;text-align:center}
+.stat-card.stat-warn{border-color:#e44}
+.stat-card-link{display:block;text-decoration:none;color:inherit;transition:border-color .2s,background .2s}
+.stat-card-link:hover{border-color:var(--text);background:rgba(255,255,255,.04)}
+.stat-num{font-family:"Oswald",sans-serif;font-size:30px;line-height:1.1}
+.stat-label{font-family:"Oswald",sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:8px}
+.stats-section{margin-top:10px}
+.stats-note{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:18px;max-width:720px}
+.orphan-list{margin-top:20px;font-size:12px;color:#666;list-style:none;line-height:1.7;word-break:break-all}
+
+/* ── UPLOAD PAGE ──────────────────────────────────── */
+.upload-wrap{
+  max-width:760px;
+  margin:0 auto;
+  padding:48px 40px 80px;
+}
+.form-group{margin-bottom:24px}
+.form-group label{
+  display:block;
+  font-family:"Oswald",sans-serif;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.form-select{
+  width:100%;
+  background:#111;
+  color:var(--text);
+  border:1px solid #333;
+  padding:10px 14px;
+  font-size:14px;
+  font-family:Helvetica,Arial,sans-serif;
+  font-weight:300;
+  appearance:none;
+  cursor:pointer;
+  transition:border-color .2s;
+}
+.form-select:focus{outline:none;border-color:#666}
+.dropzone{
+  border:1px dashed #333;
+  padding:60px 40px;
+  text-align:center;
+  cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+.dropzone:hover,.dropzone.drag-over{border-color:#666;background:#0a0a0a}
+.dropzone-text{
+  font-family:"Oswald",sans-serif;
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+}
+.dropzone-sub{
+  font-size:12px;
+  color:#555;
+  margin-top:8px;
+}
+.file-list{margin-top:16px;font-size:13px;color:var(--muted)}
+.file-list p{margin:2px 0}
+.upload-status{margin-top:14px;font-size:14px;font-family:"Oswald",sans-serif;letter-spacing:.03em;color:var(--text)}
+.alert{
+  padding:12px 16px;
+  font-size:13px;
+  border-left:2px solid;
+  margin-bottom:20px;
+}
+.alert-success{border-color:#4a9;background:rgba(64,160,100,.08);color:#8fc}
+.alert-error{border-color:#c44;background:rgba(192,64,64,.08);color:#faa}
+.backup-note{text-align:left}
+.backup-note code{background:rgba(255,255,255,.1);padding:2px 7px;border-radius:4px;font-family:monospace}
+.backup-howto{margin-top:8px}
+.backup-howto summary{cursor:pointer;color:var(--muted);font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12px}
+.backup-howto summary:hover{color:var(--text)}
+.backup-howto[open]{margin-top:10px}
+
+/* ── RESPONSIVE ───────────────────────────────────── */
+@media(max-width:900px){
+  .listing-grid,.photo-grid{grid-template-columns:repeat(2,1fr)}
+  .album-grid{grid-template-columns:repeat(2,1fr)}
+  .photo-masonry{grid-template-columns:repeat(3,1fr)}
+  .photo-masonry.view-feed{padding-left:0;padding-right:0}
+  .page-header .inner{padding:0 20px}
+  .listing,.album-grid,.photo-masonry,.photo-grid,.manage-bar,.load-more-wrap,.more-title,.more-divider,.view-toggle{padding-left:20px;padding-right:20px}
+  .hero{padding:34px 20px 10px}
+  .page-section-header{padding:40px 20px 24px}
+}
+@media(max-width:560px){
+  .listing-grid,.photo-grid{grid-template-columns:1fr}
+  .photo-masonry{padding-left:8px;padding-right:8px}
+  .photo-masonry.view-feed{padding-left:0;padding-right:0}
+  .album-grid{grid-template-columns:repeat(2,1fr);padding-left:12px;padding-right:12px;gap:16px 8px}
+  .album-title{font-size:12px;margin-top:6px}
+}
+
+/* ── МОБИЛЬНОЕ МЕНЮ (гамбургер) ─────────────────────── */
+@media(max-width:760px){
+  .view-toggle{display:flex}
+  .nav-toggle{display:block;z-index:120}
+  .menu{
+    position:fixed;
+    top:var(--nav-h);left:0;right:0;
+    background:rgba(0,0,0,.97);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-top:1px solid var(--border);
+    max-height:calc(100dvh - var(--nav-h));
+    overflow-y:auto;
+    transform:translateY(-12px);
+    opacity:0;visibility:hidden;
+    transition:opacity .25s,transform .25s,visibility .25s;
+  }
+  .page-header.nav-open .menu{opacity:1;visibility:visible;transform:translateY(0)}
+  .menu-list{flex-direction:column;align-items:stretch;gap:0;padding-bottom:8px}
+  .menu-item{display:block;border-bottom:1px solid rgba(255,255,255,.06)}
+  .menu-item:not(:first-child)::before{display:none}
+  .menu-item .link{display:block;line-height:1.15;padding:11px 24px;font-size:16px;font-weight:300;color:var(--text)}
+  .menu-item.-parent > .link{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:300;color:var(--text);letter-spacing:.05em;padding:12px 24px;cursor:pointer}
+  .acc-plus{display:inline-block;width:18px;text-align:center;transition:transform .2s}
+  .acc-plus::before{content:"+";font-size:20px;font-weight:300;color:var(--muted);line-height:1}
+  .menu-item.-parent.open .acc-plus{transform:rotate(45deg)}
+  .menu-item.-parent .submenu{position:static;display:none;background:none;border:none;box-shadow:none;padding:0;min-width:0;max-width:none}
+  .menu-item.-parent.open .submenu{display:block}
+  .submenu-list{padding:2px 0 8px;max-height:none;overflow:visible}
+  .submenu-list .menu-item{border-bottom:none}
+  .submenu-list .link{padding:6px 24px 6px 40px;font-size:14px;font-weight:300;color:var(--muted)}
+  .icon-label{display:inline}
+  .menu-item.-social{display:inline-block;width:auto;border-bottom:none}
+  .menu-item.-social .icon-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:14px}
+  .menu-divider{width:auto;height:1px;margin:6px 24px;opacity:.3}
+  .album-title{font-size:18px;margin-top:14px}
+  .album-grid{gap:34px 14px}
+  .hero-cats a,.hero-cats .sep{font-size:11px;letter-spacing:.05em}
+  .hero-cats{line-height:2}
+  .filter-bar{gap:14px 16px;margin-top:2px;padding:0 10px}
+  .filter-chip{padding:8px 4px;font-size:12px;letter-spacing:.08em}
+}
+/* Шире 760, но пункты меню не влезают в строку (у админа их больше, планшеты) — то же меню-гамбургер.
+   Класс nav-compact ставит скрипт сразу после шапки (fitNav). */
+.page-header.nav-measure .menu{transition:none !important}
+.page-header.nav-compact .nav-toggle{display:block;z-index:120}
+.page-header.nav-compact .menu{
+  position:fixed;
+  top:var(--nav-h);left:0;right:0;
+  background:rgba(0,0,0,.97);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);
+  max-height:calc(100dvh - var(--nav-h));
+  overflow-y:auto;
+  transform:translateY(-12px);
+  opacity:0;visibility:hidden;
+  transition:opacity .25s,transform .25s,visibility .25s;
+}
+.page-header.nav-compact.nav-open .menu{opacity:1;visibility:visible;transform:translateY(0)}
+.page-header.nav-compact .menu-list{flex-direction:column;align-items:stretch;gap:0;padding-bottom:8px}
+.page-header.nav-compact .menu-item{display:block;border-bottom:1px solid rgba(255,255,255,.06)}
+.page-header.nav-compact .menu-item:not(:first-child)::before{display:none}
+.page-header.nav-compact .menu-item .link{display:block;line-height:1.15;padding:11px 24px;font-size:16px;font-weight:300;color:var(--text)}
+.page-header.nav-compact .menu-item.-parent > .link{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:300;color:var(--text);letter-spacing:.05em;padding:12px 24px;cursor:pointer}
+.page-header.nav-compact .acc-plus{display:inline-block;width:18px;text-align:center;transition:transform .2s}
+.page-header.nav-compact .acc-plus::before{content:"+";font-size:20px;font-weight:300;color:var(--muted);line-height:1}
+.page-header.nav-compact .menu-item.-parent.open .acc-plus{transform:rotate(45deg)}
+.page-header.nav-compact .menu-item.-parent .submenu{position:static;display:none;background:none;border:none;box-shadow:none;padding:0;min-width:0;max-width:none}
+.page-header.nav-compact .menu-item.-parent.open .submenu{display:block}
+.page-header.nav-compact .submenu-list{padding:2px 0 8px;max-height:none;overflow:visible}
+.page-header.nav-compact .submenu-list .menu-item{border-bottom:none}
+.page-header.nav-compact .submenu-list .link{padding:6px 24px 6px 40px;font-size:14px;font-weight:300;color:var(--muted)}
+.page-header.nav-compact .icon-label{display:inline}
+.page-header.nav-compact .menu-item.-social{display:inline-block;width:auto;border-bottom:none}
+.page-header.nav-compact .menu-item.-social .icon-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:14px}
+.page-header.nav-compact .menu-divider{width:auto;height:1px;margin:6px 24px;opacity:.3}
+
+/* Клавиатура: видимая рамка у того, что выбрано клавишей Tab */
+.photo-item:focus-visible, .js-acc-toggle:focus-visible, .lightbox-close:focus-visible,
+.lightbox-arrow:focus-visible, .nav-toggle:focus-visible, a:focus-visible, button:focus-visible {
+  outline: 2px solid #fff; outline-offset: 2px;
+}

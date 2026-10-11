@@ -1,0 +1,69 @@
+{% extends 'photos/base.html' %}
+{% block title %}{{ section.name }}{% endblock %}
+{% block meta_desc %}Раздел «{{ section.name }}» — фотографии Романа Киреева.{% endblock %}
+{% block og_title %}{{ section.name }} — KIREEVONLINE.RU{% endblock %}
+{% block og_image %}{% with cov=section.get_cover %}{% if cov %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ cov.image.url }}">{% endif %}{% endwith %}{% endblock %}
+
+{% block content %}
+<div class="page-section-header fade-in">
+  <h1>{{ section.name }}</h1>
+  {% if section.hidden %}<p class="section-count">Раздел скрыт от посетителей</p>{% endif %}
+  {% if not albums and photos and user.is_staff %}<p class="section-count">{{ photos|length }} фото</p>{% endif %}
+</div>
+
+{% if albums %}
+<div class="album-grid">
+  {% for sub in albums %}
+  {% with cover=sub.get_cover %}
+  {% if cover %}
+  <a class="album-card fade-in" href="{% url 'album' sub.pk %}">
+    <div class="cover"><img src="{{ cover.get_thumb }}" alt="{{ sub.name }}" loading="lazy"></div>
+    <div class="album-title">{{ sub.name }}{% if sub.hidden %} ·{% endif %}</div>
+  </a>
+  {% endif %}
+  {% endwith %}
+  {% endfor %}
+</div>
+
+{% elif photos %}
+<div class="view-toggle fade-in">
+  <button type="button" class="view-btn js-view-grid active">Сетка</button>
+  <span class="view-sep" aria-hidden="true">|</span>
+  <button type="button" class="view-btn js-view-feed">Лента</button>
+</div>
+{% if user.is_staff %}
+<div class="manage-bar fade-in">
+  {% csrf_token %}
+  <button type="button" class="btn btn-sm js-select-toggle">Выбрать фото</button>
+  <button type="button" class="btn btn-sm btn-danger js-delete-selected" style="display:none">Удалить выбранные (0)</button>
+  {% include 'photos/panel/_move_control.html' with current_album=0 %}
+</div>
+{% endif %}
+<div class="photo-masonry" id="masonry">
+  {% for photo in photos %}
+  <div class="photo-item fade-in{% if photo.pk == cover_id %} is-cover{% endif %}" data-id="{{ photo.pk }}" data-full="{{ photo.image.url }}" data-caption="{{ photo.title }}">
+    {# адрес превью сразу — только у первых 40 (BATCH в base.html), остальным — когда дойдёт очередь #}
+    <img {% if forloop.counter <= 40 %}src{% else %}data-src{% endif %}="{{ photo.get_thumb }}" alt="{{ section.name }} — фото Романа Киреева" loading="lazy">
+    {% if user.is_staff %}<button type="button" class="cover-star" title="Сделать обложкой">★</button><span class="photo-check"></span>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+<div class="load-more-wrap"><button type="button" class="btn js-load-more" style="display:none">Показать ещё</button></div>
+
+{% if siblings %}
+<h2 class="more-title fade-in">Другие альбомы</h2>
+<div class="album-grid">
+  {% for s in siblings %}{% if s.cover %}
+  <a class="album-card fade-in" href="{{ s.url }}">
+    <div class="cover"><img src="{{ s.cover.get_thumb }}" alt="{{ s.name }}" loading="lazy"></div>
+    <div class="album-title">{{ s.name }}</div>
+  </a>
+  {% endif %}{% endfor %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.csp_nonce }}">window.initGallery({deleteUrl:"{% url 'panel:delete_photos' %}",coverUrl:"{% url 'panel:set_cover' %}",moveUrl:"{% url 'panel:move_photos' %}"})</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'photos/base.html' %}
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<div class="page-section-header fade-in">
+  <a class="breadcrumb-back" href="{% url 'panel:disk' %}">Статистика</a>
+  <h1>Корзина</h1>
+  <p class="section-count">{{ photos|length }} в корзине</p>
+</div>
+
+{% csrf_token %}
+
+{% if photos %}
+<div class="manage-bar fade-in">
+  <button type="button" class="btn btn-sm js-trash-all">Выделить все</button>
+  <button type="button" class="btn btn-sm js-trash-restore">Восстановить выбранные (0)</button>
+  <button type="button" class="btn btn-sm btn-danger js-trash-delete">Удалить навсегда выбранные (0)</button>
+  <button type="button" class="btn btn-sm btn-danger js-trash-empty">Очистить корзину</button>
+</div>
+<div class="album-grid">
+  {% for p in photos %}
+  <label class="album-card trash-item fade-in" data-id="{{ p.pk }}">
+    <input type="checkbox" class="trash-check">
+    <div class="cover"><img src="{{ p.get_thumb }}" alt="" loading="lazy"></div>
+    <div class="album-title">{{ p.section.name }}{% if p.album %} / {{ p.album.name }}{% endif %}</div>
+  </label>
+  {% endfor %}
+</div>
+{% else %}
+<p class="trash-empty-msg">Корзина пуста</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script nonce="{{ request.csp_nonce }}">
+(function(){
+  var actionUrl = "{% url 'panel:trash_action' %}";
+  function token(){ var el=document.querySelector('input[name=csrfmiddlewaretoken]'); return el?el.value:''; }
+  var items = Array.from(document.querySelectorAll('.trash-item'));
+  var restoreBtn = document.querySelector('.js-trash-restore');
+  var deleteBtn = document.querySelector('.js-trash-delete');
+  var emptyBtn = document.querySelector('.js-trash-empty');
+  var allBtn = document.querySelector('.js-trash-all');
+
+  function selectedIds(){
+    return items.filter(function(it){ return it.querySelector('.trash-check').checked; })
+                .map(function(it){ return it.getAttribute('data-id'); });
+  }
+  function refresh(){
+    var n = selectedIds().length;
+    items.forEach(function(it){ it.classList.toggle('sel', it.querySelector('.trash-check').checked); });
+    if(restoreBtn) restoreBtn.textContent = 'Восстановить выбранные ('+n+')';
+    if(deleteBtn) deleteBtn.textContent = 'Удалить навсегда выбранные ('+n+')';
+    if(allBtn) allBtn.textContent = (n===items.length && items.length) ? 'Снять выделение' : 'Выделить все';
+  }
+  items.forEach(function(it){
+    it.querySelector('.trash-check').addEventListener('change', refresh);
+  });
+  if(allBtn) allBtn.addEventListener('click', function(){
+    var allChecked = items.length && items.every(function(it){ return it.querySelector('.trash-check').checked; });
+    items.forEach(function(it){ it.querySelector('.trash-check').checked = !allChecked; });
+    refresh();
+  });
+
+  function send(action, ids){
+    var fd = new FormData();
+    fd.append('csrfmiddlewaretoken', token());
+    fd.append('action', action);
+    (ids||[]).forEach(function(id){ fd.append('ids', id); });
+    return fetch(actionUrl, {method:'POST', body:fd}).then(function(r){ return r.json(); });
+  }
+
+  if(restoreBtn) restoreBtn.addEventListener('click', function(){
+    var ids = selectedIds();
+    if(!ids.length){ return; }
+    send('restore', ids).then(function(){ location.reload(); });
+  });
+  if(deleteBtn) deleteBtn.addEventListener('click', function(){
+    var ids = selectedIds();
+    if(!ids.length){ return; }
+    if(!confirm('Стереть навсегда выбранные фото ('+ids.length+')? Вернуть их будет нельзя.')){ return; }
+    send('delete', ids).then(function(){ location.reload(); });
+  });
+  if(emptyBtn) emptyBtn.addEventListener('click', function(){
+    if(!confirm('Очистить корзину полностью? Все фото в корзине будут удалены навсегда.')){ return; }
+    send('empty', []).then(function(){ location.reload(); });
+  });
+})();
+</script>
+{% endblock %}
