@@ -215,6 +215,13 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
 .layers .span2{grid-column:span 2}
 .layers b{color:var(--fg);font-family:var(--mono);font-weight:400;font-size:.92em}
 @media (max-width:720px){.layers .span2{grid-column:auto}}
+.story{margin-top:56px;display:flex;flex-direction:column;gap:20px}
+.story ol{margin:0;padding:0;list-style:none;display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+.story li{background:var(--bg);padding:18px 22px;display:grid;grid-template-columns:150px 1fr;gap:18px;min-width:0}
+.story li .mono{color:var(--amber);padding-top:3px}
+.story li p{color:var(--muted)}
+.story li p b{color:var(--fg);font-weight:600}
+@media (max-width:640px){.story li{grid-template-columns:1fr;gap:6px}}
 </style>
 </head>
 <body>
@@ -226,8 +233,8 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
   <div class="kicker">kireevonline.ru · разбор проекта</div>
   <h1>Ни строчки <em>кода</em> вручную</h1>
   <p class="lead">Эксперимент: довести живой продукт до продакшена, не написав и не прочитав ни строчки кода.
-  Весь код написан в Claude Code. С моей стороны — требования, решения, приёмка и система проверок,
-  которая заменяет чтение кода.</p>
+  Весь код и обвязка написаны в Claude Code. С моей стороны — требования, дизайн, структура и тексты,
+  решения и приёмка.</p>
   <div class="hero-actions">
     <a class="btn" href="https://kireevonline.ru" target="_blank" rel="noopener">Открыть сайт</a>
     <a class="btn" href="https://github.com/kireevsaratov-stack/kireevonline-Public" target="_blank" rel="noopener">Код на GitHub</a>
@@ -239,7 +246,7 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
     <div><b>2 557</b><span>фото на сайте</span></div>
     <div><b>29</b><span>альбомов</span></div>
     <div><b>115</b><span>версий в git</span></div>
-    <div><b>101</b><span>автотест</span></div>
+    <div><b>103</b><span>автотеста</span></div>
     <div><b>05.2026</b><span>первая версия</span></div>
     <div><b>0</b><span>строк кода вручную</span></div>
   </div>
@@ -251,8 +258,7 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
       <div class="frame-no">КАДР 01<span>ПРОДУКТ</span></div>
       <div class="stack narrow">
         <h2>Что это</h2>
-        <p class="lead">Личный фотодневник: репортажи, путешествия, прогулки. Работает с мая 2026 года.
-        Минималистичный дизайн, сайт свёрстан и для телефона, и для широкого экрана.</p>
+        <p class="lead">Личный фотодневник: репортажи, путешествия, прогулки. Сайт свёрстан и для телефона, и для широкого экрана.</p>
       </div>
     </div>
     <div class="audiences">
@@ -306,6 +312,11 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
       <div class="stack narrow">
         <h2>Как шла работа</h2>
         <p class="lead">Я — заказчик и владелец продукта, Claude Code — инструмент, которым продукт сделан.
+        Работа шла несколько месяцев короткими циклами: задача, реализация, приёмка, доработка.</p>
+        <p class="muted">Почти всё происходило в одном окне — Claude Code: обсуждения и ТЗ, дизайн, код, тесты,
+        скрипты выкладки, команды в терминале. Браузер — чтобы проверить результат. Вне Claude Code — только
+        аккаунты хостинга, домена и GitHub: доступа к ним у AI сознательно нет, поэтому там нужные действия
+        выполнялись вручную по шагам, которые готовил Claude Code.
         Раз код не читается, всё важное закреплено в другом месте: требования — в задачах и документах,
         правильное поведение — в тестах, правила для AI — в инструкциях проекта.</p>
       </div>
@@ -345,6 +356,7 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
         для чтения; блокировка команд на Mac, вынесенная за пределы проекта; правило в инструкциях для AI.</p>
       </div>
     </div>
+
   </div>
 </section>
 
@@ -359,7 +371,7 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
       </div>
     </div>
     <div class="exif qnums">
-      <div><b>89</b><span>тестов сайта</span></div>
+      <div><b>91</b><span>тест сайта</span></div>
       <div><b>12</b><span>тестов выкладки</span></div>
       <div><b>8</b><span>сценариев в браузере</span></div>
       <div><b>4</b><span>скила для Claude Code</span></div>
@@ -375,6 +387,7 @@ dialog p{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
           <tr><td>Защита</td><td>HTTPS, политика скриптов, пауза после неверных паролей, журнал действий</td><td class="num">16</td></tr>
           <tr><td>Правила данных</td><td>Что видит гость, обложки, удаление файлов, неверные номера в запросах</td><td class="num">12</td></tr>
           <tr><td>Миграции</td><td>Изменения базы проходят туда и обратно без потери данных</td><td class="num">3</td></tr>
+          <tr><td>Демо-данные</td><td>Пустая копия сайта заполняется и открывается; на настоящем сайте команда не сработает</td><td class="num">2</td></tr>
         </tbody>
       </table>
     </div>

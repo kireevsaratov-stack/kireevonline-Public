@@ -757,12 +757,6 @@ a.filter-chip{text-decoration:none;display:inline-block}
 }
 .alert-success{border-color:#4a9;background:rgba(64,160,100,.08);color:#8fc}
 .alert-error{border-color:#c44;background:rgba(192,64,64,.08);color:#faa}
-.backup-note{text-align:left}
-.backup-note code{background:rgba(255,255,255,.1);padding:2px 7px;border-radius:4px;font-family:monospace}
-.backup-howto{margin-top:8px}
-.backup-howto summary{cursor:pointer;color:var(--muted);font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12px}
-.backup-howto summary:hover{color:var(--text)}
-.backup-howto[open]{margin-top:10px}
 
 /* ── RESPONSIVE ───────────────────────────────────── */
 @media(max-width:900px){

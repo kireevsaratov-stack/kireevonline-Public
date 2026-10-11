@@ -22,20 +22,6 @@ logger = logging.getLogger(__name__)
 @staff_member_required
 def upload_page(request):
     sections = Section.objects.prefetch_related('albums').all()
-    backup_pending = 0
-    backup_never = False
-    try:
-        import datetime
-
-        mark = os.path.join(settings.BASE_DIR, 'last_backup.txt')
-        if os.path.exists(mark):
-            epoch = int(open(mark).read().strip())
-            last = datetime.datetime.fromtimestamp(epoch, datetime.UTC)
-            backup_pending = Photo.objects.filter(is_deleted=False, created_at__gt=last).count()
-        else:
-            backup_never = True
-    except Exception:
-        pass
     return render(
         request,
         'photos/panel/upload.html',
@@ -44,8 +30,6 @@ def upload_page(request):
             'albums_by_section': {
                 str(sec.pk): [{'id': str(a.pk), 'name': a.name} for a in sec.albums.all()] for sec in sections
             },
-            'backup_pending': backup_pending,
-            'backup_never': backup_never,
         },
     )
 

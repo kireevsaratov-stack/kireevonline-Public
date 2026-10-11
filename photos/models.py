@@ -59,7 +59,7 @@ class Album(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='albums', verbose_name='Раздел')
     name = models.CharField('Название', max_length=200)
     order = models.PositiveIntegerField('Порядок', default=0)
-    hidden = models.BooleanField('Скрыть от посетителей (тестовая)', default=False)
+    hidden = models.BooleanField('Скрыть от посетителей', default=False)
     place = models.CharField(
         'Место', max_length=120, blank=True, default='', help_text='Например «Бали, Индонезия» или «Москва, ВДНХ».'
     )

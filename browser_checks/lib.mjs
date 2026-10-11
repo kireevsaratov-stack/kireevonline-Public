@@ -117,7 +117,9 @@ export async function openChrome({ width = 1280, height = 900, scale = 1, mobile
   // navigate — открыть адрес (свой — от BASE), дождаться загрузки и ещё waitMs (анимации, догрузка)
   const navigate = async (url, waitMs = 1000) => {
     const loaded = once('Page.loadEventFired', 30000);
-    await send('Page.navigate', { url: /^https?:/.test(url) ? url : BASE + url });
+    loaded.catch(() => {});  // если адрес не открылся, ошибку сообщит Page.navigate, а не таймер ожидания
+    const r = await send('Page.navigate', { url: /^[a-z]+:/.test(url) ? url : BASE + url });
+    if (r && r.errorText) throw new Error(`адрес не открылся: ${r.errorText}`);
     await loaded;
     await sleep(waitMs);
   };

@@ -143,8 +143,9 @@ deploy/      deploy, rollback, status, backup, archive, verify_backup, setup_rea
 | на GitHub | то же + выкладка, откат, автовозврат на копии сервера | `.github/workflows/tests.yml` |
 | перед выкладкой | всё выше + браузер + обратимость миграций на копии базы сайта | скил `release`, `browser_checks/` |
 
-Проверки в браузере в автозапуск на GitHub пока не входят. Большинство печатает измерения, `upload_check.mjs`
-сам сообщает «прошло / не прошло». Внешние аудиты 09.10.2026 — `docs/reviews/2026-10-09-external-audit.md` и `…-external-audit-2.md`.
+Проверки в браузере в автозапуск на GitHub не входят (нужна копия сайта с фото); все сообщают «прошло / не прошло»,
+все разом — `node browser_checks/run_all.mjs`. Перекрёстная проверка кода моделями GPT и Claude 09.10.2026 —
+`docs/reviews/2026-10-09-cross-review-1.md` и `…-cross-review-2.md`.
 
 ## Бэкапы
 

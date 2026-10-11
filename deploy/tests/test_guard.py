@@ -27,6 +27,14 @@ BLOCKED = [
     'curl -X POST https://kireevonline.ru/admin/login/',
     'curl -d "a=1" https://kireevonline.ru/',
     'KO_FAKE_SERVER=/tmp/x python3 deploy/deploy.py && python3 deploy/deploy.py',  # второй запуск — настоящий
+    # история на GitHub: перезаписать или удалить нельзя (решение Романа 12.10.2026)
+    'git push --force origin main',
+    'git push -f origin main',
+    'git push --force-with-lease origin main',
+    'cd "../public repo" && git push origin +main',
+    'git -C ../public-repo push origin --delete main',
+    'git push origin :main',
+    'git push --mirror origin',
 ]
 
 ALLOWED = [
@@ -37,6 +45,10 @@ ALLOWED = [
     'curl -s https://kireevonline.ru/robots.txt',
     'KO_FAKE_SERVER=/tmp/fake KO_FAKE_PY=/tmp/py KO_SITE_URL=http://127.0.0.1:8200 python3 deploy/deploy.py',
     'git push origin main',
+    'git push -q origin main 2>&1 | tail -2',
+    'git push -u origin main && git log --oneline -1',
+    'git push origin tests-cleanup:main',
+    'git push origin main && rm -f x.png',
 ]
 
 

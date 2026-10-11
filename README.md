@@ -41,11 +41,12 @@
 | `deploy/` | выкладка, откат, бэкап, архив и их тесты |
 | `browser_checks/` | сценарии в настоящем браузере (Chrome без окна) |
 | `docs/` | устройство, решения с причинами, бэклог, отчёты перекрёстных проверок кода, разбор проекта |
-| `CLAUDE.md`, `.claude/` | инструкции и сценарии для Claude Code |
+| `CLAUDE.md`, `.claude/` | инструкции и сценарии (скилы) для Claude Code |
+| `docs/ai-guard/` | копия блокировки команд для Claude Code (рабочая лежит вне проекта, чтобы её нельзя было ослабить правкой кода) |
 | `.githooks/`, `.github/` | проверки перед сохранением версии и на GitHub |
 
 С чего начать: [docs/architecture.md](docs/architecture.md) — как устроено,
-[docs/decisions.md](docs/decisions.md) — почему так, [docs/reviews/](docs/reviews/) — перекрёстные проверки кода.
+[docs/decisions.md](docs/decisions.md) — почему так, [docs/reviews/](docs/reviews/) — перекрёстные проверки кода моделями GPT и Claude.
 
 ## Запуск локально
 
@@ -53,6 +54,7 @@
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 python manage.py migrate
+DJANGO_DEBUG=True python manage.py demo_data   # демо-разделы и картинки-заглушки для пустой базы
 DJANGO_DEBUG=True python manage.py runserver
 ```
 

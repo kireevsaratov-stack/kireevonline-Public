@@ -7,18 +7,6 @@
     <h1>Загрузка фото</h1>
   </div>
 
-  {% if backup_pending %}
-  <div class="alert backup-note fade-in">
-    С последнего бэкапа загружено <b>{{ backup_pending }}</b> фото — рекомендуется сделать резервную копию.
-    <details class="backup-howto"><summary>как сделать бэкап</summary>
-      Открой Терминал на Mac и набери команду: <code>backup</code> — копия базы и фото скачается к тебе.
-    </details>
-  </div>
-  {% elif backup_never %}
-  <div class="alert backup-note fade-in">
-    Резервная копия ещё не отмечалась. После загрузки сделай бэкап: в Терминале набери <code>backup</code>.
-  </div>
-  {% endif %}
 
   <form id="upload-form">
     {% csrf_token %}

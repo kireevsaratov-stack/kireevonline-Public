@@ -290,7 +290,14 @@ class FakeServerDeployTests(unittest.TestCase):
 
     def test_rollback_across_text_migrations_is_refused(self):
         """Аудит 2: откат за шаги 0009–0013 стёр бы тексты альбомов — обычным откатом нельзя."""
-        old = sh('git', 'log', '--format=%H', '-1', '--', 'photos/migrations/0012_uzbekistan_text.py', cwd=self.work)
+        # версия, где последний шаг базы — 0012; собирается здесь же, чтобы тест не зависел от истории git
+        # (в публичной копии проекта истории нет)
+        sh('git', 'switch', '--quiet', '-c', 'before-0013', cwd=self.work)
+        later = sorted(p.name for p in (self.work / 'photos' / 'migrations').glob('0*.py') if p.name > '0013')
+        sh('git', 'rm', '--quiet', *('photos/migrations/' + n for n in later), cwd=self.work)
+        sh('git', 'commit', '--quiet', '-m', 'версия до шага 0013', cwd=self.work)
+        old = sh('git', 'rev-parse', 'HEAD', cwd=self.work)
+        sh('git', 'switch', '--quiet', 'main', cwd=self.work)
         r = self._run('rollback.py', '--to', old)
         self.assertNotEqual(r.returncode, 0)
         self.assertIn('тексты, написанные после', r.stdout + r.stderr)
